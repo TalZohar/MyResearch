@@ -1,0 +1,107 @@
+\documentclass[12pt]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}    % Standard encoding
+\usepackage{amsmath}           % Advanced math features
+\usepackage{amssymb}           % Extra math symbols (like \mathbb{R})
+\usepackage{geometry}          % Page layout
+\usepackage{amsthm}
+ \geometry{margin=1in}
+
+\newtheorem{theorem}{Theorem}    % [Name of environment] {Label to display}
+\newtheorem{lemma}{Lemma}      % Defines a separate counter for Lemmas
+% --- Document Info ---
+\title{Weighted Interlaced Caching Lower Bound}
+\author{Tal Zohar}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{The Varying Cache Size Problem}
+Consider the following variant of weighted paging. 
+The page requests are known in an offline manner, however the cache size changes in an online manner.
+
+Every request is represented as a tuple $(p_t, k_t)$ where $p_t$ is the page number and $k_t$ is the size of the cache upon request.
+
+Let $\sigma$ be the page request sequence and let $\phi$ be the cache size request sequence.
+
+Define The Restricted Varying Cache Size Problem (RVCSP) as the Varying Cache Size Problem but the cache size is restricted to take only values $k$ and $k-1$.
+
+\begin{lemma}
+  If there exists an $\Omega(\alpha)$ deterministic / randomized lower bound for RVCSP, then there exists an $\Omega(\alpha)$ deterministic / randomized lower bound for The Interlaced caching problem for the case where $l=2$ .
+\end{lemma}
+\begin{proof}
+  Given some $(\sigma, \phi)$ RVCSP instance (where $\sigma$ is known offline and $\phi$ is given online), we can transform it into an instance of The Interlaced Caching Problem with 2 processes $P_1,P_2$.
+  $P_1,P_2$ have request sequences $\sigma_1,\sigma_2$ respectively, defined as follows.
+  Set $\sigma_1$ to $\sigma$ and set $\sigma_2$ to $q,q,q,\ldots$ where $q$ is a page of weight $\epsilon$. 
+  Now, schedule the ICP instance as follows. Upon each request of the RVCSP instance:
+  \begin{enumerate}
+    \item If cache size is $k-1$ schedule $P_2$ for a sufficiently large amount of requests. 
+    \item Schedule $P_1$ once so that $\sigma_1$ follows $\sigma$.    
+  \end{enumerate}
+\end{proof}
+
+Similarly to the lower bound for The Parking Permit Problem, we can provide an $\Omega(k)$ deterministic lower bound and an $\Omega\left( \log k \right) $ randomized lower bound for RVCSP.
+
+\section{RVCSP $\Omega(k)$ Deterministic Lower Bound}
+
+Define $M=2k$. 
+
+Define $c_j=2^{j-1}$ for pages $p_1, p_2, \ldots, p_k$.
+Define $\sigma_k$ recursively as follows. 
+
+\[
+\sigma_j = \begin{cases}
+  p_j \overbrace{\sigma_{j-1} \sigma_{j-1} \ldots \sigma_{j-1} }^{\text{$M$ times}} p_j & j > 1 \\
+  p_1 & j = 1
+\end{cases}
+\] 
+
+We will show that given page request sequence $\sigma$, for every algorithm $ALG$ there exists a cache size sequence $\phi$ such that $ALG(\sigma, \phi) \geq k \cdot OPT(\sigma, \phi)$.
+
+Define $\phi$ so that $ALG$ never has $k$ pages in its cache. This means, whenever $ALG$ has $k-1$ pages in its cache, and there is a request for a page not in the cache, set the cache size to $k-1$. Otherwise set the cache size to $k$.
+
+Observe that the request sequence $\sigma_k$ contains many subsequences of type $\sigma_j$. We say that the amount $ALG$ pays on some subsequence $\sigma_j$ is the sum of page intervals he discarded that are fully contained within that subsequence. 
+
+We call subsequence $\sigma_j$ targeted if it contains an instance where the cache size is $k-1$.
+For every targeted subsequence $\sigma_j$ we can distinguish between three cases:
+
+\begin{enumerate}
+  \item $ALG$ removes some $p_i$ from the cache for $i > j$. 
+  \item Case 1 invalid and $ALG$ removes $p_j$ from the cache. 
+  \item Case 1 and 2 invalid (In this case, for every cache size reduction, $ALG$ removes some $p_i$ from the cache for $i < j$)
+\end{enumerate}
+
+Denote the amount of times case 2 occurs for subsequences $\sigma_j$ by $n_j$. Denote the amount of times case 3 occurs for subsequences $\sigma_j$ by $r_j$.
+
+Note that the amount of times case 1 occurs for subsequences $\sigma_j$ is $\sum_{i>k}n_i$, since each instance of case 1 for some subsequence $\sigma_j$ can be matched with an instance of case 2 for some containing subsequence $\sigma_i$.
+
+This gives us the following lower bound $c(ALG)\geq \sum_{j=1}^k c_j \cdot n_j$. 
+\begin{lemma}
+For every targeted subsequence $\sigma_j$ of case 2, $ALG$ pays at least $c_j$. For every targeted subsequence $\sigma_j$ of case 3, $ALG$ pays at least $k \cdot c_j $.  
+\end{lemma}
+\begin{proof}
+  We prove inductively. The first part of the lemma is immediate. For the second part, apply the inductive hypothesis on every of the $M$ $\sigma_{j-1}$ instances.
+  We know that each of the subsequences must be targeted of case 2 or 3, since $ALG$ must keep all $p_i$'s for $i>j$ in cache throughout.
+  Thus, by applying the inductive hypothesis, we know that $ALG$ pays at least $M \cdot c_{j-1}=k\cdot c_j$.
+\end{proof}
+The lemma gives us the following lower bound $c(ALG) \geq r_jc_j$ for every $j$. 
+
+Now, consider the algorithm which upon eviction evicts $p_j$ if in cache, otherwise evicts $p_1$. 
+We can view $\sigma$ as a sequence of $\sigma_j$ seperated by requests for pages $p_i$ for $i>j$. 
+If $\sigma_j$ is targeted, then the algorithm must evict $p_j$ and then $p_1$ on its second request. Otherwise, it does nothing.
+Thus, the algorithm pays $c_j+c_1$ times the amount of targeted subsequences $\sigma_j$. This yields the following upper bound on $OPT$
+\[
+  c(OPT)\leq (c_j+c_1) \left( r_j + \sum_{i\geq j} n_i \right) 
+\] 
+Putting it together
+\begin{align*}
+  k \cdot c(OPT) &\leq \sum_{j=1}^k (c_j + 0) \left( r_j + \sum_{i\geq j} n_i \right) \\
+                 &= \sum_{j=1}^k \left(n_j \sum_{i=1}^j c_i + r_j\cdot c_j\right) \\
+                 &< \sum_{j=1}^k \left( 2\cdot c_j\cdot n_j + r_jc_j\right) < 2\cdot c(ALG) + c(ALG) = 3\cdot c(ALG)
+\end{align*}
+
+
+\end{document}
