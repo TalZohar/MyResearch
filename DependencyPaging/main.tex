@@ -41,9 +41,9 @@ We analyze the problem assuming pages are requested one by one, such that every 
 \section{Marking Algorithms and Phase Structure}
 To analyze both the deterministic and randomized algorithms, we utilize the classical framework of \textit{marking algorithms}, adapted to respect dependency constraints. 
 
-A marking algorithm processes a request sequence in a series of disjoint phases. At the beginning of a phase, all pages are considered ``unmarked.'' As requests arrive, the requested pages (and their dependencies) are ``marked.'' The fundamental rule of a marking algorithm is that it \textbf{never evicts a marked page}. When the cache is full and an eviction is required, the algorithm is forced to choose an unmarked page. A phase naturally terminates when an eviction is needed but the cache is entirely full of marked pages.
+A marking algorithm processes a request sequence in a series of disjoint phases. At the beginning of a phase, all pages are considered ``unmarked.'' As requests arrive, the requested pages (and their dependencies) are ``marked.'' The fundamental rule of a marking algorithm is that it \textbf{never evicts a marked page}. When the cache is full and an eviction is required, the algorithm is forced to choose an unmarked page. A phase naturally terminates when an eviction is needed but the cache is entirely full of marked pages. At this point, all marks are cleared, and a new phase begins.
 
-Let $m$ denote the number of new pages requested in a phase (pages that were not in the cache at the start of the phase). 
+Consequently, the sequence is divided into phases containing exactly $k$ distinct pages, where $k$ represents the size of the cache. Let $m$ denote the number of new pages requested in a phase (pages that were not in the cache at the start of the phase). 
 
 \begin{lemma}[OPT Lower Bound]
 \label{lemma:opt_bound}
@@ -72,7 +72,7 @@ We partition the DAG $G$ into $l$ disjoint strongly-ordered chains $C_1, \ldots,
 Within each chain, the marked pages reside at the bottom, while the evicted pages reside at the top.
 \end{observation}
 
-\section{A Deterministic $O(l)$-Competitive Algorithm}
+\section{A Deterministic $O(\min(k,l))$-Competitive Algorithm}
 Standard LRU preserves dependency constraints and is $O(k)$-competitive, as shown in \cite{dallot2024dependency}. By a tighter analysis, we can show that a generic dependency-aware marking algorithm is $O(\min(k,l))$-competitive. 
 
 \begin{claim}
@@ -109,7 +109,7 @@ Algorithm \ref{alg:deterministic_mark_dep_paging} describes this generic determi
 \end{algorithmic}
 \end{algorithm}
 
-To prove the $O(l)$-competitiveness, we bound the number of misses on ``old pages'' (pages that were in the cache at the start of the phase). 
+To prove the competitiveness, we bound the number of misses on ``old pages'' (pages that were in the cache at the start of the phase). 
 
 \begin{lemma}[Bound on Displaced Pages]
 \label{lemma:displaced_bound}
@@ -133,31 +133,29 @@ Therefore, every page of $C_j$ currently in the cache is marked, making $C_j$ a 
 \end{proof}
 
 \begin{theorem}
-\label{thm:deterministic_O_l}
-The generic deterministic marking algorithm is $O(l)$-competitive.
+\label{thm:deterministic_O_min_k_l}
+The generic deterministic marking algorithm is $O(\min(k,l))$-competitive.
 \end{theorem}
 \begin{proof}
-We are interested in the total number of misses on old pages. An old page from chain $C_j$ incurs a miss if and only if it is evicted and subsequently refetched. 
+We are interested in bounding the total number of misses on old pages. An old page incurs a miss if and only if it is evicted and subsequently refetched. 
 
-By Lemma \ref{lemma:chain_marking}, the very first time an evicted old page from $C_j$ is refetched, $C_j$ becomes a marked chain. 
-A marked chain never becomes unmarked again for the remainder of the phase. 
+First, observe that once an old page is refetched, it becomes marked. By the fundamental rule of marking algorithms, marked pages are never evicted. Thus, each of the at most $k$ old pages originally in the cache can incur a maximum of one miss per phase. This bounds the total number of misses on old pages strictly by $k$.
+
+Second, we can bound the misses using the chain structure. By Lemma \ref{lemma:chain_marking}, the very first time an evicted old page from $C_j$ is refetched, $C_j$ becomes a marked chain. A marked chain never becomes unmarked again for the remainder of the phase. 
 
 Because the algorithm only evicts unmarked pages (eviction candidates), no page from $C_j$ can be evicted once $C_j$ becomes marked. Therefore, all evictions from $C_j$ must occur \textit{before} $C_j$ suffers its first miss.
 
 By Lemma \ref{lemma:displaced_bound}, the maximum number of pages from $C_j$ that can be simultaneously evicted at any given moment is bounded by the total number of evicted old pages in the entire system, which is $m$. Since $C_j$ cannot be evicted from after its first miss, the maximum number of misses $C_j$ can incur is exactly the number of its pages that were evicted prior to this moment, which is at most $m$.
 
-Summing this bound over all $l$ chains, the total number of misses on old pages is at most $m \cdot l$. The algorithm also pays exactly $m$ misses to fetch the new pages. Thus, the total cost for the phase is $m + m \cdot l = m(l + 1)$. By Lemma \ref{lemma:opt_bound}, $OPT$ pays an amortized cost of at least $m/2$ per phase, meaning the algorithm is $O(l)$-competitive.
+Summing this bound over all $l$ chains, the total number of misses on old pages is also bounded by $m \cdot l$. 
+
+Combining these two independent bounds, the total number of misses on old pages is at most $\min(k, m \cdot l) \le m \cdot \min(k, l)$ (since $m \ge 1$).
+
+The algorithm also incurs exactly $m$ misses to fetch the $m$ new pages. Thus, the total cost for the phase is at most $m + m \cdot \min(k, l) = m(1 + \min(k, l))$. By Lemma \ref{lemma:opt_bound}, $OPT$ incurs an amortized cost of at least $m/2$ per phase. Therefore, the generic deterministic marking algorithm achieves an overall competitive ratio of $O(\min(k, l))$.
 \end{proof}
 
-\begin{corollary}
-The generic deterministic marking algorithm is $O(\min(k,l))$-competitive.
-\end{corollary}
-\begin{proof}
-By Theorem \ref{thm:deterministic_O_l}, the algorithm is $O(l)$-competitive. Since standard LRU is a valid implementation of this generic marking algorithm and LRU is intrinsically $O(k)$-competitive, the algorithm achieves an overall competitive ratio of $O(\min(k,l))$.
-\end{proof}
-
-\section{A Randomized $O(\log l)$-Competitive Algorithm}
-The paper \cite{dallot2024dependency} provides an expected $O(\min(\log k, \log l))$-competitive randomized algorithm. Here, we provide an alternative, simpler analysis to show expected $O(\log l)$-competitiveness. \textit{(TODO: Show that the algorithm is also expected $O(\log k)$-competitive.)}
+\section{A Randomized $O(\min(\log k, \log l))$-Competitive Algorithm}
+The paper \cite{dallot2024dependency} provides an expected $O(\min(\log k, \log l))$-competitive randomized algorithm. Here, we provide an alternative, simpler analysis to establish this exact $O(\min(\log k, \log l))$ competitive ratio directly.
 
 We present a randomized algorithm (Algorithm \ref{alg:randomized_mark_dep_paging}) that restricts how the eviction candidates are chosen. By ensuring evictions are distributed symmetrically across the chains, we prevent the adversary from stacking $m$ misses on a single chain.
 
@@ -254,42 +252,45 @@ Could there be some other page $y \in C'$ in the cache that is unmarked? Because
 Therefore, every page of $C'$ currently in the cache is marked. By definition, $C'$ is a marked chain.
 \end{proof}
 
-Let $C_1, C_2, \ldots, C_l$ denote the $l$ chains, indexed in the exact order they become marked during the phase. Let $t_j$ denote the number of coins residing on chain $C_j$ at the exact moment it becomes marked.
+Let $u$ denote the total number of unmarked chains at the beginning of the phase. By definition, an unmarked chain must possess at least one unmarked page currently residing in the cache. Because the cache capacity is exactly $k$, there can be at most $k$ such chains. Since there are $l$ chains in total, we have $u \le \min(k, l)$. 
+
+Furthermore, a marked chain never becomes unmarked during a phase. Let $C_1, C_2, \ldots, C_u$ denote these initially unmarked chains, indexed in the exact order they become marked during the phase. Let $t_j$ denote the number of coins residing on chain $C_j$ at the exact moment it becomes marked.
 
 \begin{claim}[Expected Coins on Marked Chains]
 \label{claim:expected_marked}
-When the $j$-th chain ($C_j$) becomes marked, it possesses in expectation at most $\frac{m}{l - j + 1}$ coins. That is:
-$$E[t_j] \le \frac{m}{l - j + 1}$$
+When the $j$-th initially unmarked chain ($C_j$) becomes marked, it possesses in expectation at most $\frac{m}{u - j + 1}$ coins. That is:
+$$E[t_j] \le \frac{m}{u - j + 1}$$
 \end{claim}
 \begin{proof}
-Consider the exact moment just before $C_j$ becomes fully marked. At this moment, exactly $j - 1$ chains have already been marked, meaning there are exactly $l - j + 1$ unmarked chains remaining in the system (including $C_j$).
+Consider the exact moment just before $C_j$ becomes fully marked. At this moment, exactly $j - 1$ initially unmarked chains have already been marked, meaning there are exactly $u - j + 1$ unmarked chains remaining in the system (including $C_j$).
 
-By Claim \ref{claim:coin_removal}, we only remove coins from marked chains. This means there may be coins residing on chains that are already marked, but this is only in our favor, as it leaves fewer coins distributed among the unmarked chains. 
+By Claim \ref{claim:coin_removal}, we only remove coins from marked chains. This means there may be coins residing on chains that are already marked, but this is only in our favor, as it leaves fewer coins distributed among the remaining unmarked chains. 
 
-By Claim \ref{claim:total_coins}, the total number of coins in the entire system at any given moment is bounded by $m$. Since the algorithm distributes new coins uniformly at random among all currently unmarked chains, by symmetry, the expected number of coins residing on any specific unmarked chain is bounded by the maximum total coins in the system divided by the number of unmarked chains, $l - j + 1$. Therefore:
-$$E[t_j] \le \frac{m}{l - j + 1}$$
+By Claim \ref{claim:total_coins}, the total number of coins in the entire system at any given moment is bounded by $m$. Since the algorithm distributes new coins uniformly at random among all currently unmarked chains, by symmetry, the expected number of coins residing on any specific unmarked chain is bounded by the maximum total coins in the system divided by the number of unmarked chains, $u - j + 1$. Therefore:
+$$E[t_j] \le \frac{m}{u - j + 1}$$
 \end{proof}
 
 \begin{theorem}
-\label{thm:randomized_O_log_l}
-The randomized dependency-aware marking algorithm is $O(\log l)$-competitive.
+\label{thm:randomized_O_log_k_l}
+The randomized dependency-aware marking algorithm is $O(\min(\log k, \log l))$-competitive.
 \end{theorem}
 \begin{proof}
 We are interested in bounding the number of cache misses on old pages. An old page incurs a miss if and only if it was evicted and subsequently refetched into the cache. 
 
 By our accounting rules, an old page takes charge of a coin exactly when it is evicted, and this coin is discarded exactly when the page is refetched. Therefore, the total number of misses on old pages provides an upper bound that is exactly equal to the total number of coins discarded during the phase.
 
-By Claim \ref{claim:coin_removal}, coins are exclusively discarded from a chain once it becomes marked. Because marked chains do not receive new coins (as evictions only target unmarked chains), the maximum number of coins that can be discarded from chain $C_j$ is bounded by $t_j$, the number of coins it possessed at the exact moment it became marked. Summing these expectations over all $l$ chains provides an upper bound on the total expected cost for old pages:
+By Claim \ref{claim:coin_removal}, coins are exclusively discarded from a chain once it becomes marked. Because marked chains do not receive new coins (as evictions only target unmarked chains), the maximum number of coins that can be discarded from chain $C_j$ is bounded by $t_j$, the number of coins it possessed at the exact moment it became marked. Summing these expectations over all $u$ initially unmarked chains provides an upper bound on the total expected cost for old pages:
 \begin{align*}
-    E[\text{misses on old pages}] &\le \sum_{j=1}^{l} E[t_j] \\
-    &\le \sum_{j=1}^{l} \frac{m}{l - j + 1} \quad \text{(by Claim \ref{claim:expected_marked})} \\
-    &= m \sum_{i=1}^{l} \frac{1}{i} \\
-    &= O(m \log l)
+    E[\text{misses on old pages}] &\le \sum_{j=1}^{u} E[t_j] \\
+    &\le \sum_{j=1}^{u} \frac{m}{u - j + 1} \quad \text{(by Claim \ref{claim:expected_marked})} \\
+    &= m \sum_{i=1}^{u} \frac{1}{i} \\
+    &= O(m \log u) \\
+    &= O(m \min(\log k, \log l)) \quad \text{(since } u \le \min(k, l)\text{)}
 \end{align*}
 
-This bounds the expected cost of fetching old pages. Furthermore, the algorithm incurs exactly $m$ misses to fetch the $m$ new pages requested during the phase. Thus, the total expected cost of the algorithm for the phase is $m + O(m \log l) = O(m \log l)$. 
+This bounds the expected cost of fetching old pages. Furthermore, the algorithm incurs exactly $m$ misses to fetch the $m$ new pages requested during the phase. Thus, the total expected cost of the algorithm for the phase is $m + O(m \min(\log k, \log l)) = O(m \min(\log k, \log l))$. 
 
-By Lemma \ref{lemma:opt_bound}, $OPT$ incurs an amortized cost of at least $m/2$ misses per phase. Therefore, our randomized algorithm yields an overall expected competitive ratio of $O(\log l)$.
+By Lemma \ref{lemma:opt_bound}, $OPT$ incurs an amortized cost of at least $m/2$ misses per phase. Therefore, our randomized algorithm yields an overall expected competitive ratio of $O(\min(\log k, \log l))$.
 \end{proof}
 
 \printbibliography
