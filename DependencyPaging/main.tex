@@ -72,6 +72,11 @@ We partition the DAG $G$ into $l$ disjoint strongly-ordered chains $C_1, \ldots,
 Within each chain, the marked pages reside at the bottom, while the evicted pages reside at the top.
 \end{observation}
 
+\begin{observation}
+\label{obs:marked_chain_monotonicity}
+Once a chain becomes marked, it never becomes unmarked during the phase, since pages fetched mid-phase are immediately marked upon entry.
+\end{observation}
+
 \section{A Deterministic $O(\min(k,l))$-Competitive Algorithm}
 Standard LRU preserves dependency constraints and is $O(k)$-competitive, as shown in \cite{dallot2024dependency}. By a tighter analysis, we can show that a generic dependency-aware marking algorithm is $O(\min(k,l))$-competitive. 
 
@@ -141,7 +146,7 @@ We are interested in bounding the total number of misses on old pages. An old pa
 
 First, observe that once an old page is refetched, it becomes marked. By the fundamental rule of marking algorithms, marked pages are never evicted. Thus, each of the at most $k$ old pages originally in the cache can incur a maximum of one miss per phase. This bounds the total number of misses on old pages strictly by $k$.
 
-Second, we can bound the misses using the chain structure. By Lemma \ref{lemma:chain_marking}, the very first time an evicted old page from $C_j$ is refetched, $C_j$ becomes a marked chain. A marked chain never becomes unmarked again for the remainder of the phase. 
+Second, we can bound the misses using the chain structure. By Lemma \ref{lemma:chain_marking}, the very first time an evicted old page from $C_j$ is refetched, $C_j$ becomes a marked chain. By Observation \ref{obs:marked_chain_monotonicity}, a marked chain never becomes unmarked again for the remainder of the phase. 
 
 Because the algorithm only evicts unmarked pages (eviction candidates), no page from $C_j$ can be evicted once $C_j$ becomes marked. Therefore, all evictions from $C_j$ must occur \textit{before} $C_j$ suffers its first miss.
 
@@ -254,7 +259,7 @@ Therefore, every page of $C'$ currently in the cache is marked. By definition, $
 
 Let $u$ denote the total number of unmarked chains at the beginning of the phase. By definition, an unmarked chain must possess at least one unmarked page currently residing in the cache. Because the cache capacity is exactly $k$, there can be at most $k$ such chains. Since there are $l$ chains in total, we have $u \le \min(k, l)$. 
 
-Furthermore, a marked chain never becomes unmarked during a phase. Let $C_1, C_2, \ldots, C_u$ denote these initially unmarked chains, indexed in the exact order they become marked during the phase. Let $t_j$ denote the number of coins residing on chain $C_j$ at the exact moment it becomes marked.
+Furthermore, by Observation \ref{obs:marked_chain_monotonicity}, a marked chain never becomes unmarked during a phase. Let $C_1, C_2, \ldots, C_u$ denote these initially unmarked chains, indexed in the exact order they become marked during the phase. Let $t_j$ denote the number of coins residing on chain $C_j$ at the exact moment it becomes marked.
 
 \begin{claim}[Expected Coins on Marked Chains]
 \label{claim:expected_marked}
