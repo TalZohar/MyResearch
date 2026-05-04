@@ -33,85 +33,145 @@
 There are $n$ pages and a cache of size $k$.
 Additionally, we are provided with a dependency DAG $G$.
 Let $G[p]$ be the set of dependencies of page $p$.
-A valid solution must ensure the if page $p$ is in cache, then all $G[p]$ are also in cache.
-Let $l$ Denote the width of $G$ - The maximum antichain length.
+A valid solution must ensure that if page $p$ is in cache, then all pages in $G[p]$ are also in the cache.
+Let $l$ denote the width of $G$ - the maximum antichain length.
+
+We analyze the problem assuming pages are requested one by one, such that every request arrives only after all of its children (dependencies) have been requested. This topological request order simplifies the algorithm description and proofs without loss of generality.
+
+\section{Marking Algorithms and Phase Structure}
+To analyze both the deterministic and randomized algorithms, we utilize the classical framework of \textit{marking algorithms}, adapted to respect dependency constraints. 
+
+A marking algorithm processes a request sequence in a series of disjoint phases. At the beginning of a phase, all pages are considered ``unmarked.'' As requests arrive, the requested pages (and their dependencies) are ``marked.'' The fundamental rule of a marking algorithm is that it \textbf{never evicts a marked page}. When the cache is full and an eviction is required, the algorithm is forced to choose an unmarked page. A phase naturally terminates when an eviction is needed but the cache is entirely full of marked pages.
+
+Let $m$ denote the number of new pages requested in a phase (pages that were not in the cache at the start of the phase). 
+
+\begin{lemma}[OPT Lower Bound]
+\label{lemma:opt_bound}
+The optimal offline algorithm ($OPT$) incurs an amortized cost of at least $m/2$ misses per phase.
+\end{lemma}
+\begin{proof}
+Because $OPT$ has a cache capacity of exactly $k$, and each phase requests exactly $k$ distinct pages including $m$ entirely new pages, $OPT$ must incur at least $m$ misses across the current and previous phases combined. Thus, its amortized cost per phase is at least $m/2$.
+\end{proof}
+
+By Lemma \ref{lemma:opt_bound}, any algorithm that incurs $O(m \cdot f(l))$ misses per phase is $O(f(l))$-competitive.
+
+We partition the DAG $G$ into $l$ disjoint strongly-ordered chains $C_1, \ldots, C_l$, which is possible by Dilworth's theorem. 
+
+\noindent\textbf{Definition:} A page is considered \textbf{marked} if it has been requested during the current phase.
+
+\noindent\textbf{Definition:} A chain is considered \textbf{marked} if there is no unmarked page of the chain currently residing in the cache (i.e., all chain pages in the cache are marked).
+
+\noindent\textbf{Definition:} A page in the cache is an \textbf{eviction candidate} if it is a maximal unmarked cached page (meaning it is unmarked, and no other page currently in the cache is dependent on it). Because requests follow a topological order, these are the only pages that can be safely evicted without violating dependency constraints.
+
+\begin{observation}
+\label{obs:phase_termination}
+\textbf{Equivalence of Phase Boundaries:} By definition, a phase ends when all $k$ pages in the cache are marked. Because the cache capacity is exactly $k$, this is the exact moment when no unmarked pages remain in the cache, and consequently, all $l$ chains become marked. Therefore, a phase runs exactly as long as there are valid eviction candidates in the cache.
+\end{observation}
+
+\begin{observation}
+Within each chain, the marked pages reside at the bottom, while the evicted pages reside at the top.
+\end{observation}
 
 \section{A Deterministic $O(l)$-Competitive Algorithm}
-As mentioned in \cite{dallot2024dependency}, standard LRU preserves the dependency constraints and thus the algorithm is valid and $O(k)$-competitive
-(since $OPT$ of dependency paging must pay more than $OPT$ of standard paging on the same request sequence).
+Standard LRU preserves dependency constraints and is $O(k)$-competitive, as shown in \cite{dallot2024dependency}. By a tighter analysis, we can show that a generic dependency-aware marking algorithm is $O(\min(k,l))$-competitive. 
 
-By a tighter analysis we can show that the algorithm is $O(\min(k,l))$-competitive.
-To do so, we describe a generic dependency-aware marking algorithm (Algorithm \ref{alg:generic_mark_dep_paging}).
+\begin{claim}
+Standard LRU is a valid implementation of the generic deterministic dependency-aware marking algorithm.
+\end{claim}
 
-\begin{lemma}
-  LRU is a valid implantation of generic dependency-aware marking
-\end{lemma}
-\begin{corollary}
-  The generic dependency-aware marking algorithm is $O(k)$-competitive
-\end{corollary}
+Algorithm \ref{alg:deterministic_mark_dep_paging} describes this generic deterministic strategy. Whenever the cache is full, it simply evicts \textit{any} valid eviction candidate. 
 
 \begin{algorithm}
-\caption{Generic Marking Algorithm for Dependency Paging}
-\label{alg:generic_mark_dep_paging}
+\caption{Deterministic Marking Algorithm for Dependency Paging}
+\label{alg:deterministic_mark_dep_paging}
 \begin{algorithmic}[1]
-\State \textbf{Initialize:} Cache $C \gets \emptyset$, Marked set $M \gets \emptyset$
-\Require $\forall p, |G[p]| \le k$ \Comment{Dependency set $G[p]$ includes $p$ and fits in cache}
+\State \textbf{Initialize:} Cache $S \gets \emptyset$, Marked set $M \gets \emptyset$
 
-\For{each requested page $p$ in the request sequence}
+\For{each requested page $p$ in the sequence}
     
-    \If{$|M \cup G[p]| > k$}
-        \State $M \gets \emptyset$ \Comment{Start of a new phase: unmark all pages}
+    \If{$|M \cup \{p\}| > k$} \Comment{Phase ends when we attempt to mark beyond capacity}
+        \State \textbf{End current phase, start new phase}
+        \State $M \gets \emptyset$ \Comment{Unmark all pages}
+        \State Mark all pages in $S$ that are needed for $p$
     \EndIf
     
-    \State $M \gets M \cup G[p]$ \Comment{Mark the requested page and its dependencies}
+    \State $M \gets M \cup \{p\} \cup G[p]$ \Comment{Mark the requested page and its dependencies}
     
-    \While{$|C \cup G[p]| > k$}
-        \State \textbf{Find} an unmarked page $q \in C \setminus M$ such that $\forall x \in C \setminus \{q\}, q \notin G[x]$
-        \State $C \gets C \setminus \{q\}$ \Comment{Evict $q$, which is not a dependency for any other cached page}
+    \While{$|S \cup \{p\}| > k$} \Comment{Cache is full, eviction required}
+        \State \textbf{Find} an eviction candidate $q \in S$ 
+        \State $S \gets S \setminus \{q\}$ \Comment{Evict page $q$}
     \EndWhile
     
-    \State $C \gets C \cup G[p]$ \Comment{Load the requested page and dependencies into cache}
+    \If{$p \notin S$}
+        \State $S \gets S \cup \{p\}$ \Comment{Fetch the requested page into the cache}
+    \EndIf
 \EndFor
 \end{algorithmic}
 \end{algorithm}
 
-\begin{lemma}
-  \label{lemma:generic_mark_l_comp}
-  The generic dependency-aware marking algorithm is $O(l)$-competitive
-\end{lemma}
-\begin{corollary}
-  The generic dependency-aware marking algorithm is $O(\min(k,l))$-competitive
-\end{corollary}
+To prove the $O(l)$-competitiveness, we bound the number of misses on ``old pages'' (pages that were in the cache at the start of the phase). 
 
-Define a chain to be a set of pages such that all pages in the chain are dependencies of each other.
-By Dilworths theorem, we can cover the dependency DAG with $l$ chains, denoted $C_1, \ldots, C_l$.
-\begin{proof}[Proof of Lemma \ref{lemma:generic_mark_l_comp}]
-  By Dilworths theorem, 
+\begin{lemma}[Bound on Displaced Pages]
+\label{lemma:displaced_bound}
+At any given moment during a phase, the total number of old pages that are currently evicted from the cache is bounded by $m$.
+\end{lemma}
+\begin{proof}
+Because the cache maintains a fixed capacity of $k$, every currently evicted old page must have been perfectly replaced by a ``new page'' requested during this phase. Since at most $m$ new pages are requested in the entire phase, the cache can physically hold at most $m$ new pages at any given time. Thus, the total number of evicted old pages is bounded by $m$.
+\end{proof}
+
+\begin{lemma}[Chain Marking Upon Miss]
+\label{lemma:chain_marking}
+Let $p$ be an old page belonging to chain $C_j$ that was evicted during the current phase. At the exact moment $p$ is subsequently requested and brought back into the cache, $C_j$ becomes a marked chain.
+\end{lemma}
+\begin{proof}
+Because $C_j$ is a totally ordered chain, any other page $y \in C_j$ must either be a dependency of $p$, or $y$ must depend on $p$.
+\begin{itemize}
+    \item If $y$ is a dependency of $p$, the algorithm guarantees that when $p$ is marked, all of its dependencies currently in the cache are also marked. Thus, $y$ is marked.
+    \item If $y$ depends on $p$, then $y$ requires $p$ to be in the cache. When $p$ was originally evicted, it was an eviction candidate, meaning no cached page depended on it. Since $p$ has remained evicted until now, no page depending on $p$ (including $y$) could have been requested or fetched into the cache, as doing so would require fetching $p$ first. Thus, $y$ is currently not in the cache.
+\end{itemize}
+Therefore, every page of $C_j$ currently in the cache is marked, making $C_j$ a marked chain.
+\end{proof}
+
+\begin{theorem}
+\label{thm:deterministic_O_l}
+The generic deterministic marking algorithm is $O(l)$-competitive.
+\end{theorem}
+\begin{proof}
+We are interested in the total number of misses on old pages. An old page from chain $C_j$ incurs a miss if and only if it is evicted and subsequently refetched. 
+
+By Lemma \ref{lemma:chain_marking}, the very first time an evicted old page from $C_j$ is refetched, $C_j$ becomes a marked chain. 
+A marked chain never becomes unmarked again for the remainder of the phase. 
+
+Because the algorithm only evicts unmarked pages (eviction candidates), no page from $C_j$ can be evicted once $C_j$ becomes marked. Therefore, all evictions from $C_j$ must occur \textit{before} $C_j$ suffers its first miss.
+
+By Lemma \ref{lemma:displaced_bound}, the maximum number of pages from $C_j$ that can be simultaneously evicted at any given moment is bounded by the total number of evicted old pages in the entire system, which is $m$. Since $C_j$ cannot be evicted from after its first miss, the maximum number of misses $C_j$ can incur is exactly the number of its pages that were evicted prior to this moment, which is at most $m$.
+
+Summing this bound over all $l$ chains, the total number of misses on old pages is at most $m \cdot l$. The algorithm also pays exactly $m$ misses to fetch the new pages. Thus, the total cost for the phase is $m + m \cdot l = m(l + 1)$. By Lemma \ref{lemma:opt_bound}, $OPT$ pays an amortized cost of at least $m/2$ per phase, meaning the algorithm is $O(l)$-competitive.
+\end{proof}
+
+\begin{corollary}
+The generic deterministic marking algorithm is $O(\min(k,l))$-competitive.
+\end{corollary}
+\begin{proof}
+By Theorem \ref{thm:deterministic_O_l}, the algorithm is $O(l)$-competitive. Since standard LRU is a valid implementation of this generic marking algorithm and LRU is intrinsically $O(k)$-competitive, the algorithm achieves an overall competitive ratio of $O(\min(k,l))$.
 \end{proof}
 
 \section{A Randomized $O(\log l)$-Competitive Algorithm}
-We consider the caching problem on a dependency graph of width $l$, and we present an expected $O(\log l)$-competitive algorithm (Algorithm \ref{alg:randomized_mark_dep_paging}). We analyze the version where pages are requested one by one, such that every request arrives only after all of its children have been requested.
+The paper \cite{dallot2024dependency} provides an expected $O(\min(\log k, \log l))$-competitive randomized algorithm. Here, we provide an alternative, simpler analysis to show expected $O(\log l)$-competitiveness. \textit{(TODO: Show that the algorithm is also expected $O(\log k)$-competitive.)}
 
-The sequence is divided into phases of $k$ distinct pages, where $k$ represents the size of the cache. Suppose that in a given phase we requested $m$ new pages. It is sufficient to show that our algorithm incurs an expected $O(m \log l)$ misses to conclude the proof, because the optimal offline algorithm (OPT) clearly needs to miss at least $m$ times for the current and previous phases combined.
-
-At a high level, the algorithm proceeds in phases, keeping track of marked pages and maintaining the dependency graph constraints. By definition, a phase ends when all $k$ pages currently in the cache are marked. Equivalently, as we will formally observe, this means a phase runs exactly as long as there are actual eviction candidates. Whenever a page is requested, it becomes marked. If the cache is full and an eviction is necessary, the algorithm uniformly selects an unmarked chain and evicts a valid maximal page associated with it. 
+We present a randomized algorithm (Algorithm \ref{alg:randomized_mark_dep_paging}) that restricts how the eviction candidates are chosen. By ensuring evictions are distributed symmetrically across the chains, we prevent the adversary from stacking $m$ misses on a single chain.
 
 \subsection{Blocked Chains and Algorithm Description}
-We partition the pages into $l$ disjoint chains, which is possible by Dilworth's theorem. 
-Conceptually, within each chain, the marked pages reside at the bottom, and the evicted pages reside at the top.
+We reuse the chains $C_1, \ldots, C_l$ and the definition of an eviction candidate. To formalize the randomized selection, we define how a chain specifies its desired eviction target.
 
-\noindent\textbf{Definition:} A chain is considered \textbf{marked} if there is no unmarked page of the chain in the cache (i.e., all chain pages are marked or evicted).
+\noindent\textbf{Definition:} For any unmarked chain, its \textbf{next eviction candidate} is defined as its highest unmarked page currently residing in the cache. Note that a chain's next eviction candidate might not be a global \textit{eviction candidate}, as there could be cached pages \textit{outside} the chain that depend on it.
 
-\noindent\textbf{Definition:} A page in the cache is an \textbf{actual eviction candidate} if it is a maximal unmarked cached page (meaning it is unmarked, and no other page currently in the cache is dependent on it). These are the only pages that can be safely evicted without violating dependency constraints.
-
-\noindent\textbf{Definition:} For any unmarked chain, its \textbf{potential eviction candidate} is defined as its highest unmarked page currently residing in the cache. Note that a chain's potential eviction candidate might not be an \textit{actual} eviction candidate, as there could be cached pages \textit{outside} the chain that depend on it.
-
-We introduce the concept of a ``blocked chain'' to systematically determine how pages (specifically actual eviction candidates) are chosen for eviction.
+We introduce the concept of a ``blocked chain'' to systematically determine how actual eviction candidates are chosen.
 
 \noindent\textbf{Definition:} An unmarked chain is considered \textbf{blocked} on a page $p$ if the following two conditions are met:
 \begin{enumerate}
-    \item $p$ is an actual eviction candidate.
-    \item $p$ is an ancestor of (or equal to) the chain's potential eviction candidate.
+    \item $p$ is an eviction candidate.
+    \item $p$ is an ancestor of (or equal to) the chain's next eviction candidate.
 \end{enumerate}
 
 \begin{claim}
@@ -119,7 +179,7 @@ We introduce the concept of a ``blocked chain'' to systematically determine how 
 Every unmarked chain must be blocked by some page (can be multiple).
 \end{claim}
 \begin{proof}
-Let $\tilde{C}$ be an unmarked chain. By definition, it has a potential eviction candidate $x \in \tilde{C}$ currently residing in the cache. If we trace the dependency graph upwards from $x$ to its ancestors currently in the cache, we will eventually reach a maximal unmarked cached page $q$ (one with no cached dependents). This page $q$ is an actual eviction candidate. Because $q$ is either equal to $x$ or an ancestor of $x$, the chain $\tilde{C}$ is blocked on $q$. \\
+Let $\tilde{C}$ be an unmarked chain. By definition, it has a next eviction candidate $x \in \tilde{C}$ currently residing in the cache. If we trace the dependency graph upwards from $x$ to its ancestors currently in the cache, we will eventually reach a maximal unmarked cached page $q$ (one with no cached dependents). This page $q$ is an eviction candidate. Because $q$ is either equal to $x$ or an ancestor of $x$, the chain $\tilde{C}$ is blocked on $q$.
 \end{proof}
 
 \noindent\textbf{Eviction Rule:}
@@ -145,7 +205,7 @@ When we need to evict a page, we draw an unmarked chain $\tilde{C}$ uniformly at
     \While{$|S \cup \{p\}| > k$} \Comment{Cache is full, eviction required}
         \State Draw an unmarked chain $\tilde{C}$ uniformly at random
         \State Select a page $q \in S$ such that $\tilde{C}$ is blocked on $q$ 
-        \State \Comment{($q$ is an actual eviction candidate, and ancestor of $\tilde{C}$'s potential candidate)}
+        \State \Comment{($q$ is an eviction candidate, and ancestor of $\tilde{C}$'s next eviction candidate)}
         \State $S \gets S \setminus \{q\}$ \Comment{Evict page $q$}
     \EndWhile
     
@@ -156,29 +216,23 @@ When we need to evict a page, we draw an unmarked chain $\tilde{C}$ uniformly at
 \end{algorithmic}
 \end{algorithm}
 
-\begin{observation}
-\label{obs:phase_termination}
-\textbf{Equivalence of Phase Boundaries:} By definition, a phase ends when all $k$ pages in the cache are marked. Because the cache capacity is exactly $k$, this is the exact moment when no unmarked pages remain in the cache, and consequently, all $l$ chains become marked. By Claim \ref{claim:blocked_unmarked}, an actual eviction candidate exists if and only if there is an unmarked chain. Therefore, the standard phase definition (running until all cached pages are marked) is strictly equivalent to stating that a phase runs exactly as long as there are actual eviction candidates.
-\end{observation}
-
 \subsection{Conceptual Accounting Scheme and Analysis}
 To bound the expected number of cache misses, we introduce a conceptual accounting scheme using \textbf{``coins''}. It is important to note that these coins are strictly an analytical tool used for the proof; the algorithm does not track or utilize them during its execution.
 
 \noindent\textbf{Coin Distribution Rules:}
 \begin{itemize}
     \item \textbf{Giving Coins:} Whenever the algorithm evicts a page $q$ by randomly selecting an unmarked chain $\tilde{C}$, we conceptually give one coin to chain $\tilde{C}$. We define the evicted page $q$ to be the page \textbf{``in charge''} of this coin.
-    \item \textbf{Removing Coins:} If a page $q$ that is in charge of a coin is subsequently requested (and thus marked), we remove its associated coin from its chain. This scenario occurs exclusively when a previously evicted page is requested and brought back into the cache.
+    \item \textbf{Removing Coins:} If a page $q$ that is in charge of a coin is subsequently requested (and thus marked), we remove its associated coin from its chain. This scenario occurs exclusively when an evicted old page is refetched into the cache.
 \end{itemize}
 
-Based on this accounting scheme and the randomized algorithm, we establish the following claims:
+Based on this accounting scheme and the structural properties established in Section 2, we establish the following claims:
 
 \begin{claim}[Bound on Total Coins]
 \label{claim:total_coins}
-At any given moment, the total number of coins in the system is bounded by $m$:
-$$m \ge \text{total number of coins}$$
+At any given moment, the total number of coins in the system is bounded by $m$.
 \end{claim}
 \begin{proof}
-By our accounting rules, a coin corresponds exactly to an ``old page'' (a page present in the cache at the start of the phase) that is currently evicted. Because the cache maintains a fixed capacity of $k$, every currently evicted old page must have been perfectly replaced by a ``new page'' requested during this phase. Since at most $m$ new pages are requested in the entire phase, the cache can physically hold at most $m$ new pages at any given time. Thus, the number of currently evicted old pages---and equivalently, the total number of coins---is bounded by $m$.
+By our accounting rules, a coin corresponds exactly to an old page that is currently evicted. By Lemma \ref{lemma:displaced_bound}, the number of currently evicted old pages is bounded by $m$. Thus, the total number of coins is bounded by $m$.
 \end{proof}
 
 \begin{claim}[Coin Removal]
@@ -188,14 +242,14 @@ We only remove coins from marked chains.
 \begin{proof}
 A coin is removed from a chain $C'$ exactly when the page $p$ in charge of it is requested. We must show that at this moment, $C'$ is a marked chain (i.e., it has no unmarked pages in the cache).
 
-When $p$ was originally evicted and took charge of the coin, $C'$ was blocked on $p$. By definition, this means $C'$ had a potential eviction candidate $x$ (its highest unmarked cached page at that time), and $p$ was an ancestor of $x$ (or equal to $x$).
+When $p$ was originally evicted and took charge of the coin, $C'$ was blocked on $p$. By definition, this means $C'$ had a next eviction candidate $x$ (its highest unmarked cached page at that time), and $p$ was an ancestor of $x$ (or equal to $x$).
 
-Fast forward to the moment $p$ is requested and the coin is removed. Because $p$ is requested, $p$ is immediately marked. The algorithm guarantees that when a page is marked, all its dependencies currently in the cache are also marked. Since $x$ is a dependency of $p$ (or $x=p$), $x$ becomes marked.
+Fast forward to the moment $p$ is requested and the coin is removed. Because $p$ is requested, $p$ is immediately marked. The algorithm guarantees that when a page is marked, all its dependencies currently in the cache are also marked. Because $p$ is an ancestor of $x$, $x$ is a dependency of $p$. Thus, $x$ becomes marked.
 
-Could there be some other page $y \in C'$ in the cache that is unmarked? Because $C'$ is a totally ordered chain, $y$ must be either a descendant or an ancestor of $x$.
+Could there be some other page $y \in C'$ in the cache that is unmarked? Because $C'$ is a totally ordered chain of dependencies, $y$ must be either a dependency of $x$, or $x$ must be a dependency of $y$.
 \begin{itemize}
-    \item If $y$ is a descendant of $x$, then $y$ is also a descendant of $p$. For the same reason $x$ is marked, $y$ must also be marked.
-    \item If $y$ is an ancestor of $x$, consider its state when $p$ was originally evicted. Because $x$ was the \textit{highest} unmarked cached page in $C'$ at that time, $y$ could not have been in the cache. Since then, if $y$ is brought back to the cache it becomes marked.
+    \item If $y$ is a dependency of $x$, then by transitivity, $y$ is a dependency of $p$. For the same reason $x$ is marked, $y$ must also be marked.
+    \item If $x$ is a dependency of $y$, then $y$ is an ancestor of $x$. However, recall that when $p$ was evicted, it was an eviction candidate, meaning it had \textit{no} cached dependents (no cached pages depending on it). Because $C'$ is a totally ordered chain, $y$ and $p$ must be ordered. Since both $y$ and $p$ are ancestors of $x$, if $y$ were an ancestor of $p$ (meaning $y$ depends on $p$), it being in the cache would violate $p$'s status as an eviction candidate. Thus, such an unmarked $y$ cannot exist in the cache.
 \end{itemize}
 Therefore, every page of $C'$ currently in the cache is marked. By definition, $C'$ is a marked chain.
 \end{proof}
@@ -210,25 +264,32 @@ $$E[t_j] \le \frac{m}{l - j + 1}$$
 \begin{proof}
 Consider the exact moment just before $C_j$ becomes fully marked. At this moment, exactly $j - 1$ chains have already been marked, meaning there are exactly $l - j + 1$ unmarked chains remaining in the system (including $C_j$).
 
-By Claim \ref{claim:total_coins}, the total number of coins in the entire system at any given moment is bounded by $m$. 
-Since the algorithm distributes new coins uniformly at random among all currently unmarked chains, by symmetry, the expected number of coins residing on any specific unmarked chain is bounded by the maximum total coins in the system divided by $l - j + 1$. Therefore:
+By Claim \ref{claim:coin_removal}, we only remove coins from marked chains. This means there may be coins residing on chains that are already marked, but this is only in our favor, as it leaves fewer coins distributed among the unmarked chains. 
+
+By Claim \ref{claim:total_coins}, the total number of coins in the entire system at any given moment is bounded by $m$. Since the algorithm distributes new coins uniformly at random among all currently unmarked chains, by symmetry, the expected number of coins residing on any specific unmarked chain is bounded by the maximum total coins in the system divided by the number of unmarked chains, $l - j + 1$. Therefore:
 $$E[t_j] \le \frac{m}{l - j + 1}$$
 \end{proof}
 
 \begin{theorem}
-\label{thm:expected_misses}
-The expected number of misses paid on pages that were in the cache at the end of the previous phase is bounded by $O(m \log l)$.
+\label{thm:randomized_O_log_l}
+The randomized dependency-aware marking algorithm is $O(\log l)$-competitive.
 \end{theorem}
 \begin{proof}
-We only pay for misses on ``old pages'' (pages from the previous phase) that were evicted and had to be brought back into the cache. As established in our accounting scheme, a page is only in charge of a coin if it was previously evicted. Thus, every time an old evicted page is brought back, it is requested (marked), which conceptually removes the coin it is in charge of. This means the total number of such cache misses is exactly equal to the total number of coins removed. 
+We are interested in bounding the number of cache misses on old pages. An old page incurs a miss if and only if it was evicted and subsequently refetched into the cache. 
 
-Using Claim \ref{claim:coin_removal}, coins are exclusively removed from a chain once it is marked (or after). Because marked chains do not receive new coins, the maximum number of coins that can be removed from a chain $C_j$ is bounded by the number of coins it had when it became marked, $t_j$. We sum the expected coins removed over all chains $C_j$:
+By our accounting rules, an old page takes charge of a coin exactly when it is evicted, and this coin is discarded exactly when the page is refetched. Therefore, the total number of misses on old pages provides an upper bound that is exactly equal to the total number of coins discarded during the phase.
+
+By Claim \ref{claim:coin_removal}, coins are exclusively discarded from a chain once it becomes marked. Because marked chains do not receive new coins (as evictions only target unmarked chains), the maximum number of coins that can be discarded from chain $C_j$ is bounded by $t_j$, the number of coins it possessed at the exact moment it became marked. Summing these expectations over all $l$ chains provides an upper bound on the total expected cost for old pages:
 \begin{align*}
-    E[\text{number of old pages evicted and returned}] &\le \sum_{j=1}^{l} E[t_j] \\
+    E[\text{misses on old pages}] &\le \sum_{j=1}^{l} E[t_j] \\
     &\le \sum_{j=1}^{l} \frac{m}{l - j + 1} \quad \text{(by Claim \ref{claim:expected_marked})} \\
     &= m \sum_{i=1}^{l} \frac{1}{i} \\
     &= O(m \log l)
 \end{align*}
+
+This bounds the expected cost of fetching old pages. Furthermore, the algorithm incurs exactly $m$ misses to fetch the $m$ new pages requested during the phase. Thus, the total expected cost of the algorithm for the phase is $m + O(m \log l) = O(m \log l)$. 
+
+By Lemma \ref{lemma:opt_bound}, $OPT$ incurs an amortized cost of at least $m/2$ misses per phase. Therefore, our randomized algorithm yields an overall expected competitive ratio of $O(\log l)$.
 \end{proof}
 
 \printbibliography
