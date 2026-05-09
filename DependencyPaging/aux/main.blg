@@ -1,15 +1,15 @@
 [0] Config.pm:307> INFO - This is Biber 2.19
 [0] Config.pm:310> INFO - Logfile is 'aux/main.blg'
-[139] biber:340> INFO - === Mon May  4, 2026, 14:52:45
-[173] Biber.pm:419> INFO - Reading 'aux/main.bcf'
-[290] Biber.pm:979> INFO - Found 1 citekeys in bib section 0
-[312] Biber.pm:4419> INFO - Processing section 0
-[330] Biber.pm:4610> INFO - Looking for bibtex file 'references.bib' for section 0
-[331] bibtex.pm:1713> INFO - LaTeX decoding ...
-[335] bibtex.pm:1519> INFO - Found BibTeX data source 'references.bib'
-[400] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
-[400] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
-[401] Biber.pm:4239> INFO - Sorting list 'nty/global//global/global' of type 'entry' with template 'nty' and locale 'en-US'
-[401] Biber.pm:4245> INFO - No sort tailoring available for locale 'en-US'
-[404] bbl.pm:660> INFO - Writing 'aux/main.bbl' with encoding 'UTF-8'
-[405] bbl.pm:763> INFO - Output to aux/main.bbl
+[136] biber:340> INFO - === Sat May  9, 2026, 17:46:21
+[166] Biber.pm:419> INFO - Reading 'aux/main.bcf'
+[281] Biber.pm:979> INFO - Found 2 citekeys in bib section 0
+[302] Biber.pm:4419> INFO - Processing section 0
+[324] Biber.pm:4610> INFO - Looking for bibtex file 'references.bib' for section 0
+[325] bibtex.pm:1713> INFO - LaTeX decoding ...
+[330] bibtex.pm:1519> INFO - Found BibTeX data source 'references.bib'
+[410] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[410] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[410] Biber.pm:4239> INFO - Sorting list 'nty/global//global/global' of type 'entry' with template 'nty' and locale 'en-US'
+[410] Biber.pm:4245> INFO - No sort tailoring available for locale 'en-US'
+[414] bbl.pm:660> INFO - Writing 'aux/main.bbl' with encoding 'UTF-8'
+[416] bbl.pm:763> INFO - Output to aux/main.bbl

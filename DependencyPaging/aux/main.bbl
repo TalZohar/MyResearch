@@ -61,6 +61,37 @@
       \field{pages}{871\bibrangedash 880}
       \range{pages}{10}
     \endentry
+    \entry{DoronAradetal2024}{article}{}
+      \name{author}{3}{}{%
+        {{hash=cf555882acbdd5ee7d79ab9447ab0aca}{%
+           family={Doron-Arad},
+           familyi={D\bibinithyphendelim A\bibinitperiod},
+           given={Ilan},
+           giveni={I\bibinitperiod}}}%
+        {{hash=6a1a376d8169cfc1835f59ac934edbb7}{%
+           family={Joseph},
+           familyi={J\bibinitperiod}}}%
+        {{hash=af696c7816a6ae5e894e25428dc940e2}{%
+           family={Naor},
+           familyi={N\bibinitperiod}}}%
+      }
+      \strng{namehash}{e6c5c261db77f1433d1e3377951caf39}
+      \strng{fullhash}{e6c5c261db77f1433d1e3377951caf39}
+      \strng{bibnamehash}{e6c5c261db77f1433d1e3377951caf39}
+      \strng{authorbibnamehash}{e6c5c261db77f1433d1e3377951caf39}
+      \strng{authornamehash}{e6c5c261db77f1433d1e3377951caf39}
+      \strng{authorfullhash}{e6c5c261db77f1433d1e3377951caf39}
+      \field{sortinit}{D}
+      \field{sortinithash}{6f385f66841fb5e82009dc833c761848}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{arXiv}
+      \field{title}{Non-Linear Paging}
+      \field{year}{2024}
+      \verb{doi}
+      \verb 10.48550/arxiv.2404.13334
+      \endverb
+    \endentry
   \enddatalist
 \endrefsection
 \endinput

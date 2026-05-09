@@ -4,15 +4,26 @@
 \usepackage[utf8]{inputenc}    % Standard encoding
 \usepackage{geometry}          % Page layout
 \usepackage{amsthm}
-\geometry{margin=1in}
 \usepackage[T1]{fontenc}
 \usepackage{textcomp}
 \usepackage{amsmath, amssymb}
 \usepackage[style=numeric, backend=biber]{biblatex}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{xcolor} % Required for defining custom colors if you want them
+\usepackage{hyperref}
+\usepackage{silence}
 
+\geometry{margin=1in}
+\hypersetup{
+    colorlinks=true,       % False means boxes, true means colored text
+    linkcolor=blue,        % Color of internal links (equations, figures, sections)
+    citecolor=blue,        % Color of bibliography citations
+    urlcolor=blue,         % Color of external URLs
+    pdftitle={Your Title}, % Optional: Adds metadata to the PDF
+}
 \pdfsuppresswarningpagegroup=1
+\WarningFilter{hyperref}{Token not allowed in a PDF string}
 
 \newtheorem{theorem}{Theorem}    % [Name of environment] {Label to display}
 \newtheorem{lemma}{Lemma}      % Defines a separate counter for Lemmas
@@ -38,8 +49,8 @@ Let $l$ denote the width of $G$ - the maximum antichain length.
 
 We analyze the problem assuming pages are requested one by one, such that every request arrives only after all of its children (dependencies) have been requested. This topological request order simplifies the algorithm description and proofs without loss of generality.
 
-\section{Marking Algorithms and Phase Structure}
-To analyze both the deterministic and randomized algorithms, we utilize the classical framework of \textit{marking algorithms}, adapted to respect dependency constraints. 
+\section{The Unweighted Case - Marking Algorithms and Phase Structure}
+To analyze both the deterministic and randomized algorithms for the unweighted problem, we utilize the classical framework of \textit{marking algorithms}, adapted to respect dependency constraints. 
 
 A marking algorithm processes a request sequence in a series of disjoint phases. At the beginning of a phase, all pages are considered ``unmarked.'' As requests arrive, the requested pages (and their dependencies) are ``marked.'' The fundamental rule of a marking algorithm is that it \textbf{never evicts a marked page}. When the cache is full and an eviction is required, the algorithm is forced to choose an unmarked page. A phase naturally terminates when an eviction is needed but the cache is entirely full of marked pages. At this point, all marks are cleared, and a new phase begins.
 
@@ -77,7 +88,7 @@ Within each chain, the marked pages reside at the bottom, while the evicted page
 Once a chain becomes marked, it never becomes unmarked during the phase, since pages fetched mid-phase are immediately marked upon entry.
 \end{observation}
 
-\section{A Deterministic $O(\min(k,l))$-Competitive Algorithm}
+\section{A Deterministic $O(\min(k,l))$-Competitive Algorithm for the \\ Unweighted Case}
 Standard LRU preserves dependency constraints and is $O(k)$-competitive, as shown in \cite{dallot2024dependency}. By a tighter analysis, we can show that a generic dependency-aware marking algorithm is $O(\min(k,l))$-competitive. 
 
 \begin{claim}
@@ -159,7 +170,7 @@ Combining these two independent bounds, the total number of misses on old pages 
 The algorithm also incurs exactly $m$ misses to fetch the $m$ new pages. Thus, the total cost for the phase is at most $m + m \cdot \min(k, l) = m(1 + \min(k, l))$. By Lemma \ref{lemma:opt_bound}, $OPT$ incurs an amortized cost of at least $m/2$ per phase. Therefore, the generic deterministic marking algorithm achieves an overall competitive ratio of $O(\min(k, l))$.
 \end{proof}
 
-\section{A Randomized $O(\min(\log k, \log l))$-Competitive Algorithm}
+\section{A Randomized $O(\min(\log k, \log l))$-Competitive Algorithm for the Unweighted Case}
 The paper \cite{dallot2024dependency} provides an expected $O(\min(\log k, \log l))$-competitive randomized algorithm. Here, we provide an alternative, simpler analysis to establish this exact $O(\min(\log k, \log l))$ competitive ratio directly.
 
 We present a randomized algorithm (Algorithm \ref{alg:randomized_mark_dep_paging}) that restricts how the eviction candidates are chosen. By ensuring evictions are distributed symmetrically across the chains, we prevent the adversary from stacking $m$ misses on a single chain.
@@ -296,6 +307,50 @@ By Claim \ref{claim:coin_removal}, coins are exclusively discarded from a chain 
 This bounds the expected cost of fetching old pages. Furthermore, the algorithm incurs exactly $m$ misses to fetch the $m$ new pages requested during the phase. Thus, the total expected cost of the algorithm for the phase is $m + O(m \min(\log k, \log l)) = O(m \min(\log k, \log l))$. 
 
 By Lemma \ref{lemma:opt_bound}, $OPT$ incurs an amortized cost of at least $m/2$ misses per phase. Therefore, our randomized algorithm yields an overall expected competitive ratio of $O(\min(\log k, \log l))$.
+\end{proof}
+
+
+\section{A Deterministic $O(\min(k,l))$-Competitive Algorithm for the \\ Weighted Case}
+We now extend our results to the weighted version of the problem, where each page $p$ has an associated fetching/eviction cost $c(p)$. To achieve an $O(\min(k,l))$-competitive ratio in the weighted setting, we reduce our problem to an instance of Non-Linear Paging. 
+
+\subsection{Reduction to Non-Linear Paging}
+The Non-Linear Paging problem generalizes classic paging by allowing the "size" of a set of pages in the cache to be determined by a custom, monotone function $f$. A cache state $S$ is considered feasible as long as $f(S) \le k$. 
+
+To reduce our Weighted Dependency Paging problem to Non-Linear Paging, we keep the exact same pages, request sequence, cache capacity $k$, and eviction costs. The only thing we need to map is the feasibility function $f$. 
+
+For any set of pages $S$, let its \textbf{closure} be the set $S$ combined with all of its required dependencies in the DAG $G$. We define our feasibility function as the total number of unique pages in that closure:
+$$ f(S) = |\text{closure}(S)| $$
+
+Because adding more pages to $S$ can only increase or maintain the size of its closure, $f$ is a valid, monotone function (note it is submodular). 
+
+Suppose the Non-Linear Paging algorithm outputs cache state $S_t$ to serve the current request. 
+Using our incremental page request assumption, we can assume without loss of generality that $S_t$ satisfies all dependency constraints, since it has no reason to evict a non-maximal page (this action wont change the capacity)
+
+
+\subsection{Analysis of the Width Parameter}
+The competitive ratio of a non-linear paging algorithm is governed by its width parameter, $l_{NL}$, defined as the maximum cardinality of a minimally infeasible set minus one. 
+
+\begin{lemma}[Size of Minimally Infeasible Sets]
+\label{lemma:minimally_infeasible_bound}
+Let $\mathcal{M}$ be the collection of all minimally infeasible sets for $f(S) = |\text{closure}(S)|$. For any $S \in \mathcal{M}$, the cardinality $|S|$ is bounded by $\min(k+1, l)$.
+\end{lemma}
+\begin{proof}
+By definition, a set $S \in \mathcal{M}$ satisfies $f(S) > k$, but any proper subset $S' \subset S$ satisfies $f(S') \le k$. 
+
+First, we show that $S$ must be an antichain in the dependency DAG $G$. Assume for contradiction that there exist two distinct pages $x, y \in S$ such that $x$ is a dependency of $y$ (i.e., $x \in G[y]$). Because $x$ is already subsumed by the closure of $y$, removing $x$ from $S$ does not alter the total closure: $\text{closure}(S \setminus \{x\}) = \text{closure}(S)$. This implies $f(S \setminus \{x\}) = f(S) > k$, which directly violates the minimality of $S$. Thus, no page in $S$ can depend on another page in $S$, meaning $S$ is an antichain. Since the width of $G$ is $l$, it must be that $|S| \le l$.
+
+Second, because the cache capacity is $k$, and the base cardinality of any individual page's closure is at least 1, the maximum size of a minimally infeasible set cannot exceed $k+1$. 
+
+Therefore, the maximum cardinality of $S \in \mathcal{M}$ is strictly bounded by $\min(k+1, l)$.
+\end{proof}
+
+\begin{theorem}
+There is a deterministic $O(\min(k,l))$-competitive algorithm for the Weighted Dependency Paging problem.
+\end{theorem}
+\begin{proof}
+By Lemma \ref{lemma:minimally_infeasible_bound}, the maximum cardinality of a minimally infeasible set in our reduction is at most $\min(k+1, l)$. Following the definition of the width parameter in non-linear paging, $l_{NL} = \max_{S \in \mathcal{M}} (|S| - 1)$. This directly implies that $l_{NL} \le \min(k, l-1)$. 
+
+\cite{DoronAradetal2024} present a deterministic algorithm that achieves a tight $l_{NL}$-competitive ratio for general non-linear paging. By deploying their algorithm on our constructed instance, we immediately achieve an $O(l_{NL})$-competitive ratio, which simplifies to $O(\min(k, l))$.
 \end{proof}
 
 \printbibliography
