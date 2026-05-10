@@ -463,6 +463,34 @@ $$ dP \le \ln(k+1) dy_t(S) \Big( q(S) + 2q(S) \Big) = 3 \ln(k+1) \cdot q(S) dy_t
 $$ P \le 3 \ln(k+1) \cdot D $$
 Because Step 1 established explicit dual feasibility via the $\gamma$ routing, weak duality perfectly applies: $D \le \text{OPT}$. Therefore, the fractional cost is bounded by $P \le 3 \ln(k+1) \cdot \text{OPT}$, yielding an expected $O(\log k)$ fractional competitive ratio.
 \end{proof}
+
+\subsubsection{The Necessity of the Subset Constraints}
+
+One might wonder why the Primal LP requires an exponential number of constraints—one for every infeasible subset $S \in \mathcal{S}(t)$—rather than simply enforcing a single global cache capacity constraint alongside the explicit dependency constraints ($x_p \ge x_q$). 
+
+\textbf{The Global Capacity Constraint:} Notice that our formulation inherently includes the global capacity constraint. If we let $S = \mathcal{P}$ (the set of all pages in the system), the number of pages we must exclude to reach the cache capacity $k$ is $q(\mathcal{P}) = |\mathcal{P}| - k$. The subset constraint for $S = \mathcal{P}$ becomes $\sum_{p \in \mathcal{P}} x_p \ge |\mathcal{P}| - k$, which seamlessly rearranges to the standard capacity limit: $\sum_{p \in \mathcal{P}} (1 - x_p) \le k$.
+
+\textbf{The Inadequacy of the Global Constraint:} To see why the global capacity constraint alone is insufficient, consider the following counterexample. Suppose we have a cache of capacity $k$. There is a set $B$ of $k-1$ "bottom" pages, and a set $T$ of $k-1$ "top" pages. The dependencies are configured such that \textit{every} top page $t \in T$ depends on \textit{all} $k-1$ bottom pages in $B$.
+
+In any valid integral solution, caching even a single top page $t$ requires caching all $k-1$ bottom pages. This consumes $1 + (k - 1) = k$ slots, perfectly filling the cache. Therefore, \textbf{every integer solution must include at most 1 top page}, meaning at least $k-2$ top pages must be entirely evicted ($x_t = 1$). 
+
+Now, suppose we formulate a simplified LP using \textit{only} the global capacity constraint ($\sum_{p \in \mathcal{P}} x_p \ge (2k-2) - k = k-2$) and the dependency constraints ($x_t \ge x_b$ for all $t \in T, b \in B$). 
+
+A fractional solution could simply assign $x_p = 0.5$ to all pages in the system. 
+\begin{itemize}
+    \item \textbf{Global capacity is satisfied:} $\sum_{p \in \mathcal{P}} x_p = 2(k-1) \times 0.5 = k-1$. Since $k-1 \ge k-2$, the constraint holds.
+    \item \textbf{Dependencies are satisfied:} $x_t \ge x_b \implies 0.5 \ge 0.5$.
+\end{itemize}
+However, this solution leaves $1 - 0.5 = 0.5$ fractional mass of \textit{every} top page inside the cache. The total fractional mass of cached top pages is $\frac{k-1}{2}$. For $k > 3$, this vastly exceeds the logical maximum of $1$, allowing the algorithm to "cheat" by hiding an impossible combination of fractional top pages inside the global capacity pool.
+
+\textbf{How Our Subset Constraints Fix the Issue:} Our LP prevents this by enforcing $\sum_{p \in S} x_p \ge q(S)$ for \textit{every} infeasible subset. 
+
+Consider the subset $S = T$ (consisting solely of the $k-1$ top pages). What is $q(T)$? To make any subset $T' \subseteq T$ feasible, its closure must be at most $k$. Because the closure of any top page immediately brings all $k-1$ bottom pages into the cache, we can retain at most $1$ top page. To make $S = T$ feasible, we are forced to exclude $q(T) = |T| - 1 = k - 2$ pages.
+
+This generates the specific LP constraint:
+$$ \sum_{t \in T} x_t \ge k - 2 $$
+If we evaluate the cheating fractional solution ($x_t = 0.5$), the sum is $\frac{k-1}{2}$. For any $k > 3$ (e.g., $k=5$), the sum evaluates to $2$, which strictly violates the required bound of $k-2 = 3$. 
+
 \printbibliography
 
 \end{document}
