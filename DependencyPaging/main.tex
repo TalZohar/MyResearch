@@ -352,7 +352,117 @@ By Lemma \ref{lemma:minimally_infeasible_bound}, the maximum cardinality of a mi
 
 \cite{DoronAradetal2024} present a deterministic algorithm that achieves a tight $l_{NL}$-competitive ratio for general non-linear paging. By deploying their algorithm on our constructed instance, we immediately achieve an $O(l_{NL})$-competitive ratio, which simplifies to $O(\min(k, l))$.
 \end{proof}
+\section{A Randomized Algorithm for the Weighted Case}
 
+In this section, we transition to the weighted version of the randomized dependency paging problem. We first examine a natural fractional relaxation and demonstrate its structural limitations.
+
+\subsection{Approach 1: Fractional Relaxation}
+
+A standard technique for designing randomized competitive algorithms is to first formulate a continuous, fractional relaxation of the problem state. In our context, we can define the state of the cache by assigning a scalar $y_i \in [0, m]$ to each chain $C_i$, representing how many of its pages are currently in the cache. We allow these topmost pages to be fractional as long as the total cache capacity is strictly maintained: $\sum_{i=1}^l y_i \le k$.
+
+\begin{theorem}
+\label{thm:fractional_lower_bound}
+The fractional relaxation cannot achieve a competitive ratio better than $l$.
+\end{theorem}
+\begin{proof}
+Consider $l$ disjoint chains of length $m$ with a cache capacity $k = (m-1)l$. Let the fetching cost of the $h$-th page in any chain be $w_h = 2^h$. 
+
+Since $\sum_{i=1}^l y_i \le (m-1)l$, at any moment there exists at least one chain $j$ such that $y_j \le m-1$. The adversary repeatedly requests the $m$-th page of such a chain ($p_{j,m}$). 
+
+To serve $p_{j,m}$, the fractional algorithm must increase $y_j$ to $m$. Since the page was entirely missing ($y_j \le m-1$), the algorithm must fetch $p_{j,m}$ and incur a cost of at least $w_m = 2^m$. To maintain the capacity constraint, the algorithm must decrease the mass of other chains, ensuring the existence of a new chain with $y \le m-1$ for the next request. Over a cycle of $l$ requests (one for each chain), the algorithm pays $l \cdot 2^m$.
+
+In contrast, an offline algorithm ($OPT$) can keep $l-1$ chains fully in the cache and leave one chain entirely empty. $OPT$ only pays when the empty chain is requested, at which point it swaps it with another chain. For the same $l$ requests, $OPT$ performs at most one swap, costing:
+\[
+\sum_{h=1}^m 2^h < 2 \cdot 2^m
+\]
+
+The competitive ratio is therefore $\Omega(\frac{l \cdot 2^m}{2^m}) = \Omega(l)$.
+\end{proof}
+
+\subsection{Approach 2: Direct Fractional Relaxation with Dependency Constraints}
+
+To achieve an optimal $O(\log k)$ competitive ratio independent of general non-linear paging rounding schemes, we formulate a fractional LP that explicitly captures the temporal requests and the topological constraints of the dependency DAG.
+
+Let $E$ be the set of directed edges in the dependency DAG, where $(p, q) \in E$ means page $p$ depends on page $q$. By the rules of the cache, if dependency $q$ is evicted, its dependent page $p$ must also be evicted. We define our anti-cache variables as $x_{p,j}$, representing the fractional eviction of page $p$ during the interval $I(p,j)$. To enforce dependencies fractionally, we strictly require $x_{p,r(p,t)} \ge x_{q,r(q,t)}$ at any time $t$.
+
+Let $q(S)$ be the minimum number of pages needed to be excluded from an infeasible set $S$ such that the closure of the remaining cached pages is feasible (i.e., its total size including dependencies is at most $k$).
+
+\subsubsection{The LP Formulation}
+We define the Primal and Dual LP relaxations explicitly modeling the DAG constraints.
+
+\noindent\textbf{Primal LP:}
+$$ \min \sum_{p \in \mathcal{P}} \sum_{j \in [n_p]} c(p) x_{p,j} $$
+\textbf{Subject to:}
+$$ \sum_{p \in S \setminus \{p_t\}} x_{p,r(p,t)} \ge q(S) \quad \forall t \in T, \forall \text{ infeasible } S \ni p_t $$
+$$ x_{p,r(p,t)} - x_{q,r(q,t)} \ge 0 \quad \forall (p,q) \in E, \forall t \in T $$
+$$ x_{p,j} \ge 0 \quad \forall p \in \mathcal{P}, \forall j \in [n_p] $$
+
+\noindent\textbf{Dual LP:}
+$$ \max \sum_{t \in T} \sum_{S \in \mathcal{S}(t)} y_t(S) q(S) $$
+\textbf{Subject to:}
+$$ \sum_{t \in I(p,j)} \left( \sum_{S \in \mathcal{S}(t) \mid p \in S \setminus \{p_t\}} y_t(S) + \sum_{q: (p,q) \in E} \gamma_{p,q,t} - \sum_{r: (r,p) \in E} \gamma_{r,p,t} \right) \le c(p) \quad \forall p \in \mathcal{P}, \forall j \in [n_p] $$
+$$ y_t(S) \ge 0, \gamma_{p,q,t} \ge 0 $$
+
+The dual variables $\gamma_{p,q,t}$ act as a directed "flow" along the DAG. If the algorithm is forced to fractionally evict a dependency $q$, it can shift the dual cost burden upwards to the dependent page $p$ that requires it, preventing $q$'s dual constraint from being prematurely violated.
+
+\subsubsection{The Fractional Algorithm}
+We maintain a fractional state $x$ and actively group pages into disjoint \textbf{components} $K$. We now explicitly manage the $\gamma$ variables within these components to route dual flow and maintain strict dual feasibility while enforcing $x_p \ge x_q$.
+
+\begin{enumerate}
+    \item \textbf{Initialization:} Start with $x_{p,j} = 0$ for all pages. Initialize all dual variables $y_t(S) = 0$ and internal flow variables $\gamma_{p,q,t} = 0$. Let the set of components $\mathcal{K}$ initially be individual pages: $\mathcal{K} = \{ \{p\} : p \in \mathcal{P} \}$.
+    \item \textbf{On Request:} When a request $p_t$ arrives at time $t$, $x_{p_t, r(p_t,t)} = 0$. Any existing component containing $p_t$ or its dependencies is broken down back into individual pages, and their associated internal $\gamma$ flows are frozen for that interval.
+    \item \textbf{Continuous Update:} While there is an infeasible set $S \ni p_t$ such that the primal constraint $\sum_{p \in S \setminus \{p_t\}} x_{p,r(p,t)} < q(S)$ is violated, and $x_{p,r(p,t)} < 1$ for all $p \in S \setminus \{p_t\}$:
+    \begin{itemize}
+        \item Continuously increase the dual variable $y_t(S)$.
+        \item For each page $p$, its native accumulated dual weight is $Y_{p, r(p,t)} = \sum_{\tau \le t} \sum_{S' \ni p} y_\tau(S')$.
+        \item For each component $K \in \mathcal{K}$, its aggregated weight is $Y_K = \sum_{p \in K} Y_{p, r(p,t)}$.
+        \item \textbf{Dual Flow Routing ($\gamma$ update):} Within any merged component $K$, the dual weight must be distributed so no page violates its capacity. We continuously increase the internal flow variables $\gamma_{p,q,t}$ along the directed edges of $K$. Specifically, for an infinitesimal increase $dY_K$, we route $\gamma$ such that the \textit{effective} dual weight increment $dY_v^{\text{eff}}$ for every page $v \in K$ satisfies:
+        $$ dY_v^{\text{eff}} = dy_t(S)\cdot \mathbb{I}[v \in S] + \sum_{(v,u) \in E} d\gamma_{v,u,t} - \sum_{(r,v) \in E} d\gamma_{r,v,t} = \frac{c(v)}{c(K)} dY_K $$
+        where $c(K) = \sum_{p \in K} c(p)$. This explicitly shifts excess dual weight from cheaper dependencies to expensive dependents.
+        \item Increase the uniform anti-cache value $x_K$ (applied identically to all $p \in K$) exponentially using the component's total capacity:
+        $$ x_K = \frac{1}{k} \left( \exp\left( \frac{\ln(k+1)}{c(K)} Y_K \right) - 1 \right) $$
+        \item \textbf{Component Merging:} As dual variables grow, if $x_q$ reaches $x_p$ for some dependency edge $(p,q) \in E$ and $x_q$ is growing faster, we merge them to prevent a topological violation. We replace $K_p$ and $K_q$ with a new component $K' = K_p \cup K_q$. Their fractional values are locked together, permanently enforcing $x_{p,r(p,t)} \ge x_{q,r(q,t)}$ and allowing $\gamma$ flow between them.
+    \end{itemize}
+\end{enumerate}
+
+\begin{observation}[Continuity of Component Merging]
+When two components $K_p$ and $K_q$ merge, their fractional value $x$ does not jump. The merge occurs exactly when their dual densities are equal: $\frac{Y_{K_p}}{c(K_p)} = \frac{Y_{K_q}}{c(K_q)} = D$. By the mediant property of fractions, the combined density is $\frac{Y_{K_p} + Y_{K_q}}{c(K_p) + c(K_q)} = D$, strictly preserving the exponent and ensuring continuous evolution.
+\end{observation}
+
+\subsubsection{Competitive Ratio Analysis}
+
+\begin{theorem}
+The fractional algorithm yields a fractional $O(\log k)$-competitive ratio for the Weighted Dependency Paging problem.
+\end{theorem}
+
+\begin{proof}
+\textbf{Step 1: Dual Feasibility and Network Flow.} To utilize weak duality, we must prove the constructed dual variables $y$ and $\gamma$ form a feasible solution to the Dual LP. The left-hand side of the dual constraint for any page $v$ is exactly its effective dual weight $Y_v^{\text{eff}}$. 
+
+For an individual unmerged page $p$, $\gamma = 0$, and the stopping condition $x_p \le 1$ trivially ensures $\ln(k+1) \ge \frac{\ln(k+1)}{c(p)} Y_p^{\text{eff}}$, meaning $Y_p^{\text{eff}} \le c(p)$. 
+
+For a merged component $K$, the algorithm explicitly routes the $\gamma$ variables such that $Y_v^{\text{eff}} = \frac{c(v)}{c(K)} Y_K$. Because the algorithm guarantees $x_K \le 1$ for the entire component, substituting this into the update rule gives:
+$$ 1 \ge \frac{1}{k} \left( \exp\left( \frac{\ln(k+1)}{c(K)} Y_K \right) - 1 \right) \implies Y_K \le c(K) $$
+Since $Y_K \le c(K)$, the effective dual weight for each individual page $v \in K$ is strictly bounded:
+$$ Y_v^{\text{eff}} = \frac{c(v)}{c(K)} Y_K \le \frac{c(v)}{c(K)} c(K) = c(v) $$
+Because dependencies $q$ merge with dependents $p$ only when $q$'s density exceeds $p$'s, the required flow direction inherently aligns with the valid edge orientation $(p,q)$ (meaning $q$ successfully offloads weight $-\gamma$ while $p$ absorbs $+\gamma$). Thus, the explicit $\gamma$ routing guarantees every dual constraint is strictly satisfied.
+
+\textbf{Step 2: Bounding the Derivative.} Let $P$ denote the fractional primal cost and $D$ denote the dual cost. An infinitesimal increase $dy_t(S)$ increases the dual cost by $dD = q(S) dy_t(S)$. Taking the derivative of our exponential update rule with respect to $Y_K$ gives $c(K) dx_K = \ln(k+1) (x_K + 1/k) dY_K$. 
+
+Since $dY_K = |K \cap S| dy_t(S)$, the total increase in our primal cost is:
+$$ dP = \sum_{K \in \mathcal{K}} c(K) dx_K = \ln(k+1) dy_t(S) \sum_{K \in \mathcal{K}} |K \cap S| \left( x_K + \frac{1}{k} \right) $$
+Summing $|K \cap S|$ exactly reconstructs the individual pages in the set, allowing the grouped component costs $c(K)$ to drop out:
+$$ dP = \ln(k+1) dy_t(S) \sum_{p \in S \setminus \{p_t\}} \left( x_{p,r(p,t)} + \frac{1}{k} \right) $$
+
+\textbf{Step 3: Utilizing the Cache Capacity.} By definition, excluding the optimal $q(S)$ pages from $S$ results in a set $S^*$ such that its closure is feasible ($|\text{closure}(S^*)| \le k$). Since $S^* \subseteq \text{closure}(S^*)$, the raw remaining pages satisfy $|S| - q(S) \le k$, or $\frac{|S|}{k} \le \frac{q(S)}{k} + 1 \le 2q(S)$.
+
+During the update, the primal constraint is unmet ($\sum_{p \in S \setminus \{p_t\}} x_{p,r(p,t)} \le q(S)$). Substituting this structural bound into the derivative:
+$$ dP \le \ln(k+1) dy_t(S) \left( \sum_{p \in S \setminus \{p_t\}} x_{p,r(p,t)} + \frac{|S|-1}{k} \right) $$
+$$ dP \le \ln(k+1) dy_t(S) \Big( q(S) + 2q(S) \Big) = 3 \ln(k+1) \cdot q(S) dy_t(S) $$
+
+\textbf{Conclusion.} Substituting $dD = q(S) dy_t(S)$, we establish $dP \le 3 \ln(k+1) \cdot dD$. Integrating this over the request sequence yields a total fractional primal cost strictly bounded by the final dual cost:
+$$ P \le 3 \ln(k+1) \cdot D $$
+Because Step 1 established explicit dual feasibility via the $\gamma$ routing, weak duality perfectly applies: $D \le \text{OPT}$. Therefore, the fractional cost is bounded by $P \le 3 \ln(k+1) \cdot \text{OPT}$, yielding an expected $O(\log k)$ fractional competitive ratio.
+\end{proof}
 \printbibliography
 
 \end{document}
