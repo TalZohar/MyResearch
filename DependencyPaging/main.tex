@@ -466,30 +466,54 @@ Because Step 1 established explicit dual feasibility via the $\gamma$ routing, w
 
 \subsubsection{The Necessity of the Subset Constraints}
 
-One might wonder why the Primal LP requires an exponential number of constraints—one for every infeasible subset $S \in \mathcal{S}(t)$—rather than simply enforcing a single global cache capacity constraint alongside the explicit dependency constraints ($x_p \ge x_q$). 
+One might wonder why the Primal LP requires an exponential number of constraints---one for every infeasible subset $S \in \mathcal{S}(t)$---rather than simply enforcing a single global cache capacity constraint alongside the explicit dependency constraints ($x_p \ge x_q$). 
 
 \textbf{The Global Capacity Constraint:} Notice that our formulation inherently includes the global capacity constraint. If we let $S = \mathcal{P}$ (the set of all pages in the system), the number of pages we must exclude to reach the cache capacity $k$ is $q(\mathcal{P}) = |\mathcal{P}| - k$. The subset constraint for $S = \mathcal{P}$ becomes $\sum_{p \in \mathcal{P}} x_p \ge |\mathcal{P}| - k$, which seamlessly rearranges to the standard capacity limit: $\sum_{p \in \mathcal{P}} (1 - x_p) \le k$.
 
-\textbf{The Inadequacy of the Global Constraint:} To see why the global capacity constraint alone is insufficient, consider the following counterexample. Suppose we have a cache of capacity $k$. There is a set $B$ of $k-1$ "bottom" pages, and a set $T$ of $k-1$ "top" pages. The dependencies are configured such that \textit{every} top page $t \in T$ depends on \textit{all} $k-1$ bottom pages in $B$.
+However, relying strictly on the global capacity constraint introduces severe structural violations and massive integrality gaps, as demonstrated by the following two counterexamples.
+
+\textbf{Counterexample 1: Hiding Fractional Mass} \\
+Consider a cache of capacity $k$. There is a set $B$ of $k-1$ ``bottom'' pages, and a set $T$ of $k-1$ ``top'' pages. The dependencies are configured such that \textit{every} top page $t \in T$ depends on \textit{all} $k-1$ bottom pages in $B$.
 
 In any valid integral solution, caching even a single top page $t$ requires caching all $k-1$ bottom pages. This consumes $1 + (k - 1) = k$ slots, perfectly filling the cache. Therefore, \textbf{every integer solution must include at most 1 top page}, meaning at least $k-2$ top pages must be entirely evicted ($x_t = 1$). 
 
-Now, suppose we formulate a simplified LP using \textit{only} the global capacity constraint ($\sum_{p \in \mathcal{P}} x_p \ge (2k-2) - k = k-2$) and the dependency constraints ($x_t \ge x_b$ for all $t \in T, b \in B$). 
+Suppose we formulate a simplified LP using \textit{only} the global capacity constraint ($\sum_{p \in \mathcal{P}} x_p \ge (2k-2) - k = k-2$) and the dependency constraints ($x_t \ge x_b$ for all $t \in T, b \in B$). 
 
 A fractional solution could simply assign $x_p = 0.5$ to all pages in the system. 
 \begin{itemize}
     \item \textbf{Global capacity is satisfied:} $\sum_{p \in \mathcal{P}} x_p = 2(k-1) \times 0.5 = k-1$. Since $k-1 \ge k-2$, the constraint holds.
     \item \textbf{Dependencies are satisfied:} $x_t \ge x_b \implies 0.5 \ge 0.5$.
 \end{itemize}
-However, this solution leaves $1 - 0.5 = 0.5$ fractional mass of \textit{every} top page inside the cache. The total fractional mass of cached top pages is $\frac{k-1}{2}$. For $k > 3$, this vastly exceeds the logical maximum of $1$, allowing the algorithm to "cheat" by hiding an impossible combination of fractional top pages inside the global capacity pool.
+However, this solution leaves $1 - 0.5 = 0.5$ fractional mass of \textit{every} top page inside the cache. The total fractional mass of cached top pages is $\frac{k-1}{2}$. For $k > 3$, this vastly exceeds the logical maximum of $1$, allowing the algorithm to ``cheat'' by hiding an impossible combination of fractional top pages inside the global capacity pool.
 
-\textbf{How Our Subset Constraints Fix the Issue:} Our LP prevents this by enforcing $\sum_{p \in S} x_p \ge q(S)$ for \textit{every} infeasible subset. 
+\textbf{Counterexample 2: Cost Smearing and the $\Omega(k)$ Integrality Gap} \\
+Now consider the weighted setting. Let the cache capacity be $k = m$. Consider a strict dependency chain $C$ consisting of $m$ pages: $p_1 \leftarrow p_2 \leftarrow \dots \leftarrow p_m$, where each $p_i$ depends on $p_{i-1}$. 
+\begin{itemize}
+    \item The fetching cost for the lower pages is $c(p_i) = 1$ for all $1 \le i \le m-1$.
+    \item The fetching cost for the topmost page is extremely large: $c(p_m) = W$ (where $W \gg m$).
+    \item There is one additional independent page $L$ with a fetching cost of $c(L) = 1$.
+\end{itemize}
+The total number of pages is $m+1$. Assume $C$ is fully cached. The adversary repeatedly requests $L$, then $p_m$.
 
-Consider the subset $S = T$ (consisting solely of the $k-1$ top pages). What is $q(T)$? To make any subset $T' \subseteq T$ feasible, its closure must be at most $k$. Because the closure of any top page immediately brings all $k-1$ bottom pages into the cache, we can retain at most $1$ top page. To make $S = T$ feasible, we are forced to exclude $q(T) = |T| - 1 = k - 2$ pages.
+For an \textbf{integral algorithm} to serve $L$, it must evict a page to respect capacity $m$. Evicting any page from $C$ forces the eviction of $p_m$ due to dependency rules. When $p_m$ is requested next, the algorithm pays $W$ to refetch it. Thus, the integral optimal pays $\Omega(W)$ per phase.
 
-This generates the specific LP constraint:
+Under the \textbf{simplified fractional LP} (global constraint $\sum_{p \in \mathcal{P}} x_p \ge 1$ and dependencies $x_{p_m} \ge \dots \ge x_{p_1}$), when $L$ is requested, the algorithm must set $x_L = 0$. To satisfy the global eviction requirement of $1$ as cheaply as possible, it can ``smear'' the eviction uniformly across the entire chain by setting $x_{p_i} = \frac{1}{m}$ for all $1 \le i \le m$. 
+This satisfies the global capacity ($\sum_{i=1}^m \frac{1}{m} = 1$) and the dependencies ($\frac{1}{m} \ge \frac{1}{m}$). When $p_m$ is requested next, the fractional algorithm pays to refetch this fraction:
+$$ \text{Fractional Cost} = \sum_{i=1}^m c(p_i) x_{p_i} = \frac{1}{m} \Big( (m-1)\cdot 1 + W \Big) \approx \frac{W}{m} $$
+By exploiting the global constraint, the fractional algorithm pays roughly $W/m$ per phase compared to the integral $W$. This results in an integrality gap of $\Omega(m)$. Since $m = k$, this $\Omega(k)$ gap completely breaks any expected $O(\log k)$ competitive ratio.
+
+\textbf{How Our Subset Constraints Fix the Issues} \\
+Our full LP enforces $\sum_{p \in S} x_p \ge q(S)$ for \textit{every} infeasible subset, addressing both exploits simultaneously.
+
+\textit{Fixing Counterexample 1:} Consider the subset $S = T$ (the $k-1$ top pages). To make any subset of $T$ feasible, its closure must be at most $k$. Because caching even one top page brings in all $k-1$ bottom pages, we can retain at most $1$ top page. To make $S = T$ feasible, we must exclude $q(T) = |T| - 1 = k - 2$ pages. This generates the constraint:
 $$ \sum_{t \in T} x_t \ge k - 2 $$
-If we evaluate the cheating fractional solution ($x_t = 0.5$), the sum is $\frac{k-1}{2}$. For any $k > 3$ (e.g., $k=5$), the sum evaluates to $2$, which strictly violates the required bound of $k-2 = 3$. 
+If we evaluate the cheating fractional solution ($x_t = 0.5$), the sum is $\frac{k-1}{2}$. For $k = 5$, this evaluates to $2$, which strictly violates the required bound of $k-2 = 3$. 
+
+\textit{Fixing Counterexample 2:} Consider the subset $S = \{p_m, L\}$. Caching both brings the entire chain $C$ into the cache, giving a closure size of $m+1 > k$. Thus, $S$ is infeasible. Excluding either $p_m$ or $L$ leaves a feasible closure ($\le m$). Therefore, $q(S) = 1$. This generates the constraint:
+$$ x_{p_m} + x_L \ge 1 $$
+When the adversary requests $L$, the algorithm is forced to set $x_L = 0$. This subset constraint immediately enforces:
+$$ x_{p_m} \ge 1 $$
+The fractional algorithm is mathematically blocked from smearing its eviction mass into the cheaper lower pages. It is forced to fully evict the expensive topmost page $p_m$, paying the full cost $W$ to refetch it and completely closing the integrality gap.
 
 \printbibliography
 
