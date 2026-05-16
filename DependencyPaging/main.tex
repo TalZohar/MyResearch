@@ -337,7 +337,7 @@ Let $w_q \in [0,1]$ be a fractional counter for each page $q \in G$, initialized
 
 If $U_p$ is not empty, we continuously ``pour'' the budget $b$ into the counters of a specific subset $S(p) \subseteq U_p$. We define $S(p)$ as the set of unmarked pages in $U_p$ whose dependencies are \textit{entirely marked}. We pour the budget into these pages regardless of whether they are already residing in the cache. The mere presence of an unmarked page in the cache does not automatically satisfy it; it is only marked and considered fully satisfied when its counter $w_q$ reaches $1$. 
 
-As soon as a counter $w_q$ reaches $1$ for some $q \in S(p)$, the page conceptually prepares to be marked. We first check for a phase termination: if marking $q$ would exceed the cache capacity $k$, the current phase ends. All marks are cleared ($M \gets \emptyset$), and crucially, all fractional counters $w_y$ are reset to $0$. We then recompute $U_p$ to reflect the newly unmarked dependencies and simply \textit{continue} the budget-pouring loop from scratch. This guarantees that budget poured strictly maps to markings within the active phase.
+As soon as a counter $w_q$ reaches $1$ for some $q \in S(p)$, the page becomes eligible to be marked. We first check for a phase termination: if marking $q$ would exceed the cache capacity $k$, the current phase ends. All marks are cleared ($M \gets \emptyset$), and crucially, all fractional counters $w_y$ are reset to $0$. We then recompute $U_p$ to reflect the newly unmarked dependencies and simply \textit{continue} the budget-pouring loop from scratch. This guarantees that budget poured strictly maps to markings within the active phase.
 
 If no phase reset is triggered (or after a reset occurs and $q$ successfully reaches $w_q = 1$ again), $q$ is marked and removed from $U_p$. If fetching $q$ into the cache requires an eviction, we execute exactly one randomized chain eviction. This pouring process continues dynamically until either the budget $b$ is completely exhausted (in which case the request for $p$ is bypassed), or $U_p$ becomes empty, meaning all required pages have been conceptually fetched and marked.
 
@@ -409,41 +409,22 @@ To analyze the competitive ratio on this reduced sequence, we must redefine $m_i
 
 Therefore, we redefine $m_i$ precisely as the number of \textit{new marked pages} in phase $i$ relative to the previous phase. Formally, $m_i = |M_i \setminus M_{i-1}|$, where $M_i$ is the set of marked pages at the end of phase $i$, and $M_{i-1}$ is the set of marked pages at the end of phase $i-1$. By this definition, $m_i$ exactly captures the number of new marks introduced by the virtual sequence $I'$ during phase $i$.
 
-To bound the total cost incurred by our algorithm ($ALG$) over the entire sequence, we decompose its cost into two components: the cost of bypasses (the total budget poured) and the cost of fetches (cache misses). 
+To bound the total cost incurred by our algorithm ($ALG$) over the entire sequence, we decompose its cost into two components: the cost of fetches (cache misses) and the cost of bypasses (the total budget poured). 
+
+\begin{lemma}[Global Bound on Fetch Cost]
+\label{lemma:fetch_cost_bound}
+Over the entire request sequence, the expected fetch cost incurred by $ALG$ is bounded by $\sum_i O(m_i \min(\log k, \log l))$.
+\end{lemma}
+\begin{proof}
+The budget-pouring mechanism constructs the virtual sequence $I'$ such that a virtual request for a page $q$ is issued only when all of its dependencies $G[q]$ are already marked. Consequently, $I'$ strictly adheres to the topological ordering constraint required by our standard non-bypass framework. Running the randomized marking algorithm (Algorithm \ref{alg:bypass_pouring}) on $I'$ generates exactly $m_i$ new marked pages in phase $i$. Because the topological structure and the randomized eviction strategy remain identical, the core analysis from Section 4 applies directly to each phase. Thus, the expected number of cache misses (fetches) generated in phase $i$ is exactly $O(m_i \min(\log k, \log l))$. Summing this over all phases establishes the global bound.
+\end{proof}
 
 \begin{lemma}[Global Bound on Bypass Cost]
 \label{lemma:bypass_cost_bound}
-Over the entire request sequence, the total cost of bypasses incurred by $ALG$ is less than or equal to the total cost of fetches.
+Over the entire request sequence, the total bypass cost incurred by $ALG$ is asymptotically bounded by its total fetch cost.
 \end{lemma}
 \begin{proof}
-The total bypass penalty paid by $ALG$ corresponds exactly to the continuous budget poured into the fractional counters $w_q$ throughout the sequence. By the design of the algorithm, a counter maxes out at $1$, at which point it triggers a mark and a corresponding fetch event (if the page is not cached). Although counters reset to $0$ at the start of every phase, the total accumulated budget poured into any page before a reset or a fetch is strictly bounded by $1$. By directly charging the fractional budget poured into these variables to the eventual actual page fetches they induce (or the capacity they consume), we guarantee that the total budget poured across all phases—and thus the total bypass penalty—is strictly bounded by the total cost of fetches across all phases.
-\end{proof}
-
-\begin{lemma}[Global Bypass OPT Lower Bound]
-\label{lemma:bypass_opt_bound}
-Let $m_i = |M_i \setminus M_{i-1}|$ be the number of new marked pages in phase $i$. The optimal offline algorithm ($OPT$) incurs a total cost of at least $\sum_i \Omega(m_i)$ over the entire sequence.
-\end{lemma}
-\begin{proof}
-To establish the lower bound, we analyze the cost incurred by $OPT$ over pairs of consecutive phases. Consider any two consecutive phases $i-1$ and $i$, which form a continuous time window during the algorithm's execution. 
-
-Let $M = M_{i-1} \cup M_i$ be the set of pages marked by our online algorithm ($ALG$) during this window. By our definitions, $|M_{i-1}| = k$ and $m_i = |M_i \setminus M_{i-1}|$, meaning the total number of distinct pages in $M$ is exactly $k + m_i$. Let $X \subseteq M$ denote the subset of marked pages that $OPT$ \textit{never holds} in its cache at any point during these two phases. 
-
-First, we bound $OPT$'s fetch cost. Over the duration of phases $i-1$ and $i$, the maximum number of distinct pages $OPT$ can hold in its cache is bounded by its initial cache capacity at the start of phase $i-1$ (which is $k$) plus the total number of new pages it fetches. Let $f_{OPT}^{(i-1, i)}$ denote the number of fetches $OPT$ makes during this window. By definition, $OPT$ must hold all pages in $M \setminus X$ at some point during these phases. Therefore, the number of distinct pages $OPT$ holds must be at least $|M \setminus X| = k + m_i - |X|$. This yields the inequality:
-$$ k + f_{OPT}^{(i-1, i)} \ge k + m_i - |X| \implies f_{OPT}^{(i-1, i)} \ge m_i - |X| $$
-Since the number of fetches cannot be negative, $OPT$'s fetch cost during this time window is at least $\max(0, m_i - |X|)$.
-
-Second, we bound $OPT$'s bypass cost. Because a single request might trigger a phase boundary, assigning a discrete request penalty to a specific phase is problematic. Instead, we map $OPT$'s cost continuously. Let $\mathcal{B}_{OPT}$ be the set of all requests bypassed by $OPT$ over the entire sequence. For every request $t \in \mathcal{B}_{OPT}$ with penalty $b_t$, $ALG$ pours a total continuous budget $b'_t \le b_t$ distributed across the fractional counters of its dependencies. 
-
-Because $b'_t \le b_t$, we can injectively charge $ALG$'s poured budget directly against $OPT$'s bypass penalty. We define $OPT$'s \textit{apportioned bypass cost} for the time window of phases $i-1$ and $i$ as exactly the amount of budget $ALG$ pours during these two phases for requests in $\mathcal{B}_{OPT}$. Summing this apportioned cost over all disjoint phase pairs naturally bounds $OPT$'s true total bypass cost without double-counting.
-
-Consider a page $q \in X$. Because $q \in M$, $ALG$ marked $q$ during phase $i-1$ or $i$. This means $ALG$ poured exactly $1$ total unit of fractional credit into $q$'s counter strictly within this time window. Every time $ALG$ pours budget into $q$ while processing some request $t$, it implies $q$ is a required dependency for $p_t$. Since $q \in X$, $OPT$ does \textit{not} have $q$ in its cache at any point during these phases. Consequently, $OPT$ is physically incapable of satisfying request $t$ and \textit{must} bypass it ($t \in \mathcal{B}_{OPT}$).
-
-Therefore, \textit{all} of the budget poured into any page $q \in X$ during phases $i-1$ and $i$ strictly originates from requests bypassed by $OPT$. Since exactly $1$ unit of budget is poured into each of the $|X|$ pages in $X$ during this window, the total budget poured from requests in $\mathcal{B}_{OPT}$ during this time is at least $|X|$. Thus, $OPT$'s apportioned bypass cost for phases $i-1$ and $i$ is at least $|X|$.
-
-Combining the bounds, the total apportioned cost incurred by $OPT$ during phases $i-1$ and $i$ is:
-$$ \text{Total Cost}_{OPT}^{(i-1, i)} \ge \text{Fetch Cost}_{OPT}^{(i-1, i)} + \text{Apportioned Bypass}_{OPT}^{(i-1, i)} \ge \max(0, m_i - |X|) + |X| \ge m_i $$
-
-Since $OPT$'s apportioned cost is at least $m_i$ for every overlapping pair of consecutive phases $(i-1, i)$, we can sum these independent bounds over disjoint temporal windows (e.g., phase pairs $(1,2), (3,4), \dots$). This yields a total global cost for $OPT$ over the entire sequence of at least $\sum_j m_{2j} \ge \frac{1}{2} \sum_i m_i = \Omega(\sum_i m_i)$. 
+The total bypass penalty paid by $ALG$ corresponds exactly to the continuous budget poured into the fractional counters $w_q$ throughout the sequence. By the design of the algorithm, a counter ceases to accumulate budget once it reaches $1$, at which point it triggers a marking event and a corresponding virtual request in $I'$. Because counters reset to $0$ at the start of every phase, the maximum budget any page can absorb before triggering a structural cache operation (or validating an existing cache resident) is strictly bounded by $1$. By mathematically charging the fractional budget poured into these variables to the work required to process the virtual sequence $I'$, the total continuous budget poured across all phases—and thus the total bypass penalty—is bounded by the total operational cost (fetches) generated by $I'$.
 \end{proof}
 
 \begin{theorem}[Total Upper Bound for ALG]
@@ -462,6 +443,28 @@ To evaluate the competitive ratio, we bound the optimal offline cost against thi
 \label{lemma:bypass_opt_bound}
 Let $m_i = |M_i \setminus M_{i-1}|$ be the number of new marked pages in phase $i$. The optimal offline algorithm ($OPT$) incurs a total cost of at least $\sum_i \Omega(m_i)$ over the entire sequence.
 \end{lemma}
+\begin{proof}
+To establish the lower bound, we analyze the cost incurred by $OPT$ over pairs of consecutive phases. Consider any two consecutive phases $i-1$ and $i$, which form a continuous time window during the algorithm's execution. 
+
+Let $M = M_{i-1} \cup M_i$ be the set of pages marked by our online algorithm ($ALG$) during this window. By our definitions, $|M_{i-1}| = k$ and $m_i = |M_i \setminus M_{i-1}|$, meaning the total number of distinct pages in $M$ is exactly $k + m_i$. Let $X \subseteq M$ denote the subset of marked pages that $OPT$ \textit{never holds} in its cache at any point during these two phases. 
+
+First, we bound $OPT$'s fetch cost. Over the duration of phases $i-1$ and $i$, the maximum number of distinct pages $OPT$ can hold in its cache is bounded by its initial cache capacity at the start of phase $i-1$ (which is $k$) plus the total number of new pages it fetches. Let $f_{OPT}^{(i-1, i)}$ denote the number of fetches $OPT$ makes during this window. By definition, $OPT$ must hold all pages in $M \setminus X$ at some point during these phases. Therefore, the number of distinct pages $OPT$ holds must be at least $|M \setminus X| = k + m_i - |X|$. This yields the inequality:
+$$ k + f_{OPT}^{(i-1, i)} \ge k + m_i - |X| \implies f_{OPT}^{(i-1, i)} \ge m_i - |X| $$
+Since the number of fetches cannot be negative, $OPT$'s fetch cost during this time window is at least $\max(0, m_i - |X|)$.
+
+Second, we bound $OPT$'s bypass cost. Because a single request might trigger a phase boundary, assigning a discrete request penalty to a specific phase is problematic. Instead, we map $OPT$'s cost continuously. Let $\mathcal{B}_{OPT}$ be the set of all requests bypassed by $OPT$ over the entire sequence. For every request $t \in \mathcal{B}_{OPT}$ with penalty $b_t$, $ALG$ pours a total continuous budget $b'_t \le b_t$ distributed across the fractional counters of its dependencies. 
+
+Because $b'_t \le b_t$, we can injectively charge $ALG$'s poured budget directly against $OPT$'s bypass penalty. We define $OPT$'s \textit{apportioned bypass cost} for the time window spanning phases $i-1$ and $i$ as exactly the volume of budget $ALG$ poured during these two phases originating from requests in $\mathcal{B}_{OPT}$. Summing this apportioned cost over all disjoint phase pairs naturally bounds $OPT$'s true total bypass cost without double-counting.
+
+Consider a page $q \in X$. Because $q \in M$, $ALG$ marked $q$ during phase $i-1$ or $i$. This means $ALG$ poured exactly $1$ total unit of fractional credit into $q$'s counter strictly within this time window. Every time $ALG$ pours budget into $q$ while processing some request $t$, it implies $q$ is a required dependency for the request. Since $q \in X$, $OPT$ does \textit{not} have $q$ in its cache at any point during these phases. Consequently, $OPT$ is physically incapable of satisfying request $t$ and \textit{must} bypass it ($t \in \mathcal{B}_{OPT}$).
+
+Therefore, \textit{all} of the budget poured into any page $q \in X$ during phases $i-1$ and $i$ strictly originates from requests bypassed by $OPT$. Since exactly $1$ unit of budget is poured into each of the $|X|$ pages in $X$ during this window, the total budget poured from requests in $\mathcal{B}_{OPT}$ during this time is at least $|X|$. Thus, $OPT$'s apportioned bypass cost for phases $i-1$ and $i$ is at least $|X|$.
+
+Combining the bounds, the total apportioned cost incurred by $OPT$ during phases $i-1$ and $i$ is:
+$$ \text{Total Cost}_{OPT}^{(i-1, i)} \ge \text{Fetch Cost}_{OPT}^{(i-1, i)} + \text{Apportioned Bypass}_{OPT}^{(i-1, i)} \ge \max(0, m_i - |X|) + |X| \ge m_i $$
+
+Since $OPT$'s apportioned cost is at least $m_i$ for every overlapping pair of consecutive phases $(i-1, i)$, we can sum these independent bounds over disjoint temporal windows (e.g., phase pairs $(1,2), (3,4), \dots$). This yields a total global cost for $OPT$ over the entire sequence of at least $\sum_j m_{2j} \ge \frac{1}{2} \sum_i m_i = \Omega(\sum_i m_i)$. 
+\end{proof}
 
 Bringing it all together, the continuous budget-pouring reduction guarantees that $ALG$ incurs an expected total cost of at most $\sum_i O(m_i \min(\log k, \log l))$. By Lemma \ref{lemma:bypass_opt_bound}, $OPT$ incurs a total cost of at least $\sum_i \Omega(m_i)$. Therefore, our algorithm successfully handles individual request rejections while preserving the tight expected competitive ratio of $O(\min(\log k, \log l))$.
 \section{A Deterministic $O(\min(k,l))$-Competitive Algorithm for the \\ Weighted Case}
