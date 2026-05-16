@@ -19,6 +19,51 @@
 
 \refsection{0}
   \datalist[entry]{nty/global//global/global}
+    \entry{Bienkowskietal2016}{article}{}
+      \name{author}{5}{}{%
+        {{hash=5fec956884081aea00e074ade1897b07}{%
+           family={Bienkowski},
+           familyi={B\bibinitperiod},
+           given={Marcin},
+           giveni={M\bibinitperiod}}}%
+        {{hash=32ca1ea84400e45bbd43165cd7ecacc0}{%
+           family={Marcinkowski},
+           familyi={M\bibinitperiod},
+           given={Jan},
+           giveni={J\bibinitperiod}}}%
+        {{hash=d01f7504d3a6f04707be9a945c8de2e2}{%
+           family={Pacut},
+           familyi={P\bibinitperiod},
+           given={Maciej},
+           giveni={M\bibinitperiod}}}%
+        {{hash=58ef30159a40139f51c8605979d5ffb5}{%
+           family={Schmid},
+           familyi={S\bibinitperiod},
+           given={Stefan},
+           giveni={S\bibinitperiod}}}%
+        {{hash=e0368910d3899a80065af347ca746ba5}{%
+           family={Spyra},
+           familyi={S\bibinitperiod},
+           given={Aleksandra},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{9f7093488317819d035be41342a6b163}
+      \strng{fullhash}{83d29967b4db8ecf37f336befde1558a}
+      \strng{bibnamehash}{9f7093488317819d035be41342a6b163}
+      \strng{authorbibnamehash}{9f7093488317819d035be41342a6b163}
+      \strng{authornamehash}{9f7093488317819d035be41342a6b163}
+      \strng{authorfullhash}{83d29967b4db8ecf37f336befde1558a}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{arXiv}
+      \field{title}{Online Tree Caching}
+      \field{year}{2016}
+      \verb{doi}
+      \verb 10.48550/arxiv.1602.08563
+      \endverb
+    \endentry
     \entry{dallot2024dependency}{inproceedings}{}
       \name{author}{4}{}{%
         {{hash=14e593116a1dec7aaec8fd738026d29c}{%
@@ -90,6 +135,49 @@
       \field{year}{2024}
       \verb{doi}
       \verb 10.48550/arxiv.2404.13334
+      \endverb
+    \endentry
+    \entry{Epsteinetal2013}{article}{}
+      \name{author}{4}{}{%
+        {{hash=f35330bbd53b6cba9055d8fa6a11dd32}{%
+           family={Epstein},
+           familyi={E\bibinitperiod},
+           given={Leah},
+           giveni={L\bibinitperiod}}}%
+        {{hash=9d81845012f23b01645bfcd58b560c6e}{%
+           family={Imreh},
+           familyi={I\bibinitperiod},
+           given={Csanád},
+           giveni={C\bibinitperiod}}}%
+        {{hash=ffdccadc7c1121a2dcd0d86253694337}{%
+           family={Levin},
+           familyi={L\bibinitperiod},
+           given={Asaf},
+           giveni={A\bibinitperiod}}}%
+        {{hash=0fc9c0479f3323574b9148b9c78ae153}{%
+           family={Nagy-György},
+           familyi={N\bibinithyphendelim G\bibinitperiod},
+           given={Judit},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{cd0460626fd535018f0289481358456b}
+      \strng{fullhash}{0a4459c4aa6d4729608e485275a2f06a}
+      \strng{bibnamehash}{cd0460626fd535018f0289481358456b}
+      \strng{authorbibnamehash}{cd0460626fd535018f0289481358456b}
+      \strng{authornamehash}{cd0460626fd535018f0289481358456b}
+      \strng{authorfullhash}{0a4459c4aa6d4729608e485275a2f06a}
+      \field{sortinit}{E}
+      \field{sortinithash}{8da8a182d344d5b9047633dfc0cc9131}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Algorithmica}
+      \field{title}{Online File Caching with Rejection Penalties}
+      \field{volume}{71}
+      \field{year}{2013}
+      \field{pages}{279\bibrangedash 306}
+      \range{pages}{28}
+      \verb{doi}
+      \verb 10.1007/s00453-013-9793-0
       \endverb
     \endentry
   \enddatalist
