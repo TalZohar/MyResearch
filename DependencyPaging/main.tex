@@ -542,6 +542,123 @@ By Lemma \ref{lemma:minimally_infeasible_bound}, the maximum cardinality of a mi
 
 \cite{DoronAradetal2024} present a deterministic algorithm that achieves a tight $l_{NL}$-competitive ratio for general non-linear paging. By deploying their algorithm on our constructed instance, we immediately achieve an $O(l_{NL})$-competitive ratio, which simplifies to $O(\min(k, l))$.
 \end{proof}
+\section{Deterministic Weighted Dependency Paging with Rejections}
+\label{sec:deterministic_weighted_rejections}
+
+In this section, we extend the deterministic weighted dependency paging algorithm to accommodate arbitrary bypass penalties. We build upon the Non-Linear Paging framework, utilizing the closure property of the feasibility function $f(S) = |\text{closure}(S)|$ to inherently manage the dependency DAG topology without requiring fractional routing variables.
+
+\subsection{LP Relaxation for Non-Linear Paging with Rejections}
+We extend the general non-linear LP by introducing the bypass penalty $b_t \in \mathbb{R}^+$ and the bypass variable $z_t \in \{0,1\}$ for the request at time $t$. We maintain the definitions of $\mathcal{S}(t) = \{S \subseteq \mathcal{P} \mid p_t \in S \text{ and } f(S) > k\}$, $r(p,t)$, and $I(p,j)$.
+
+\noindent\textbf{Primal LP:}
+\begin{align*}
+\min \quad & \sum_{p \in \mathcal{P}} \sum_{j \in [n_p]} x_p(j) \cdot c(p) + \sum_{t \in T} z_t \cdot b_t \\
+\text{s.t.} \quad & \sum_{p \in S \setminus \{p_t\}} x_p(r(p,t)) + z_t \ge 1 \quad \forall t \in T, \forall S \in \mathcal{S}(t) \\
+& x_p(j) \ge 0, \quad z_t \ge 0 \quad \forall p \in \mathcal{P}, \forall j \in [n_p], \forall t \in T
+\end{align*}
+
+\noindent\textbf{Dual LP:}
+\begin{align*}
+\max \quad & \sum_{t \in T} \sum_{S \in \mathcal{S}(t)} y_t(S) \\
+\text{s.t.} \quad & \sum_{t \in I(p,j)} \sum_{S \in \mathcal{S}(t) \mid p \in S \setminus \{p_t\}} y_t(S) \le c(p) \quad \forall p \in \mathcal{P}, \forall j \in [n_p] \\
+& \sum_{S \in \mathcal{S}(t)} y_t(S) \le b_t \quad \forall t \in T \\
+& y_t(S) \ge 0 \quad \forall t \in T, \forall S \in \mathcal{S}(t)
+\end{align*}
+
+\subsection{The Deterministic Algorithm}
+To achieve the optimal competitive ratio, the algorithm must ``revert'' tentative evictions if the dual variable for rejection reaches the penalty bound $b_t$. We denote the accumulated dual weight for page $p$ as $Y_p(j) = \sum_{t \in I(p,j)} \sum_{S \in \mathcal{S}(t) \mid p \in S \setminus \{p_t\}} y_t(S)$.
+
+\begin{algorithm}
+\caption{Deterministic Non-Linear Paging with Rejections}
+\label{alg:deterministic_nlp_rejections}
+\begin{algorithmic}[1]
+\State \textbf{Initialize} primal solutions $x \gets 0, z \gets 0$ and dual solution $y \gets 0$.
+\For{time $t \in T$}
+    \State Let $Cache_t = \{p \in \mathcal{P} \mid r(p,t) \ge 1 \text{ and } x_p(r(p,t)) = 0\}$.
+    \State Let $E_t \gets \emptyset$ \Comment{Set of tentative evictions at time $t$}
+    \While{$f(Cache_t) > k$}
+        \State Find $Q \subseteq Cache_t$ such that $Q \in \mathcal{S}(t)$ of minimum cardinality.
+        \While{$Y_p(r(p,t)) < c(p) \; \forall p \in Q \setminus \{p_t\}$ \textbf{and} $\sum_{S \in \mathcal{S}(t)} y_t(S) < b_t$}
+            \State Increase $y_t(Q)$ continuously.
+        \EndWhile
+        
+        \If{$\sum_{S \in \mathcal{S}(t)} y_t(S) = b_t$}
+            \State $z_t \gets 1$ \Comment{Request is bypassed}
+            \For{$p \in E_t$}
+                \State $x_p(r(p,t)) \gets 0$ \Comment{Revert tentative evictions}
+            \EndFor
+            \State $Cache_t \gets Cache_t \cup E_t \setminus \{p_t\}$
+            \State \textbf{break} while loop
+        \EndIf
+        
+        \For{$p \in Q \setminus \{p_t\}$ such that $Y_p(r(p,t)) = c(p)$}
+            \State Remove $p$ from cache: $x_p(r(p,t)) \gets 1$, $Cache_t \gets Cache_t \setminus \{p\}$
+            \State $E_t \gets E_t \cup \{p\}$
+        \EndFor
+    \EndWhile
+\EndFor
+\State \textbf{Return} the solutions $x, z$, and $y$.
+\end{algorithmic}
+\end{algorithm}
+
+\begin{observation}[Implicit Topological Enforcement via Closure]
+\label{obs:closure_cascading}
+In Algorithm \ref{alg:deterministic_nlp_rejections}, it is possible for a page $p \in Q$ to be evicted while a page $x$ that depends on $p$ remains in $Cache_t$. However, this does not violate physical cache constraints. If $x \in Cache_t$ depends on $p$, then $p$ is inherently contained within $\text{closure}(Cache_t)$. Therefore, mathematically removing $p$ from $Cache_t$ does not remove $p$ from the closure, meaning the capacity $f(Cache_t)$ does not decrease. Because $f(Cache_t) > k$ remains true, the while loop is forced to continue executing. It will inevitably identify and evict the dependent page $x$ in subsequent iterations to actually reduce the closure size. This mechanism acts as a "lazy eviction", where the LP absorbs the cost of $p$ immediately, but $p$'s physical memory is only freed once its dependents are also cleared.
+\end{observation}
+
+\subsection{Competitive Analysis}
+
+\begin{lemma}[Feasibility]
+\label{lemma:feasibility_rejections}
+Algorithm \ref{alg:deterministic_nlp_rejections} returns primal and dual feasible solutions.
+\end{lemma}
+\begin{proof}
+The dual solution $y$ is strictly bounded by $c(p)$ and $b_t$ due to the halting conditions in Line 7, ensuring dual feasibility. For the primal solution, the while loop at Line 5 only terminates under two conditions:
+\begin{enumerate}
+    \item $f(Cache_t) \le k$, meaning no $S \in \mathcal{S}(t)$ is fully contained in the cache, thus satisfying \\ $\sum_{p \in S \setminus \{p_t\}} x_p(r(p,t)) \ge 1$.
+    \item $z_t = 1$, which inherently satisfies the constraint $\sum_{p \in S \setminus \{p_t\}} x_p(r(p,t)) + z_t \ge 1$ for all $S \in \mathcal{S}(t)$.
+\end{enumerate}
+Thus, the primal solution is feasible.
+\end{proof}
+
+\begin{lemma}[Cost Bound]
+\label{lemma:cost_bound_rejections}
+Let $c(x,z)$ be the cost of the integral primal solution and $v(y)$ be the value of the dual solution. Then $c(x,z) \le (l_{NL} + 1) \cdot v(y)$, where $l_{NL}$ is the width of $f$.
+\end{lemma}
+\begin{proof}
+Because primal variables are only set to $1$ when their corresponding dual constraints are perfectly tight, we have:
+\[
+c(x,z) = \sum_{p \in \mathcal{P}} \sum_{j \in [n_p]} x_p(j) \cdot c(p) + \sum_{t \in T} z_t \cdot b_t \le \sum_{p \in \mathcal{P}} \sum_{j \in [n_p]} x_p(j) \cdot Y_p(j) + \sum_{t \in T} z_t \sum_{S \in \mathcal{S}(t)} y_t(S)
+\]
+Expanding $Y_p(j)$ and exchanging the order of summation yields exactly:
+\[
+c(x,z) \le \sum_{t \in T} \sum_{S \in \mathcal{S}(t)} y_t(S) \left( \sum_{p \in S \setminus \{p_t\}} x_p(r(p,t)) + z_t \right)
+\]
+Consider any set $S$ for which $y_t(S) > 0$. By Line 6, $S$ was chosen as a set $Q$ of minimum cardinality, meaning $S$ is minimally infeasible ($S \in \mathcal{M}$). This structural property enforces that $|S \setminus \{p_t\}| \le l_{NL}$. We evaluate the multiplier in the parentheses:
+
+The variable $x_p(r(p,t))$ evaluates to $1$ if page $p$ is evicted at \textit{any} point during the interval $I(p, r(p,t))$.
+\begin{itemize}
+    \item \textbf{Case 1: The request is served ($z_t = 0$).} The number of terms in the summation is exactly $|S \setminus \{p_t\}| \le l_{NL}$. Even if every page in the set is eventually evicted, the multiplier is strictly bounded by $l_{NL} + 0 = l_{NL}$.
+    \item \textbf{Case 2: The request is bypassed ($z_t = 1$).} At time $t$, all tentative evictions $E_t$ are reverted. However, pages in $S \setminus \{p_t\}$ may still be legitimately evicted at some future time $t' > t$ before their next request, causing their $x_p$ variables to ultimately become $1$. In the absolute worst case, the algorithm pays the bypass penalty ($z_t = 1$) \textit{and} eventually evicts every other page in the minimally infeasible set. The maximum possible sum is mathematically bounded by $1 + |S \setminus \{p_t\}| \le 1 + l_{NL}$.
+\end{itemize}
+
+In all cases, the multiplier is strictly bounded by $l_{NL} + 1$. Thus:
+\[
+c(x,z) \le \sum_{t \in T} \sum_{S \in \mathcal{S}(t)} y_t(S) \cdot (l_{NL} + 1) = (l_{NL} + 1) \cdot v(y)
+\]
+\end{proof}
+
+\begin{theorem}
+\label{thm:deterministic_rejections_final}
+The deterministic primal-dual algorithm for Weighted Dependency Paging with Rejections is $O(\min(k,l))$-competitive.
+\end{theorem}
+\begin{proof}
+By Lemma \ref{lemma:feasibility_rejections}, the dual solution $y$ is feasible. By weak duality, $v(y) \le OPT$. Applying the bound established in Lemma \ref{lemma:cost_bound_rejections}:
+\[
+c(x,z) \le (l_{NL} + 1) \cdot v(y) \le (l_{NL} + 1) \cdot OPT
+\]
+By Lemma \ref{lemma:minimally_infeasible_bound}, the width $l_{NL}$ of the feasibility function $f(S) = |\text{closure}(S)|$ is strictly bounded by $\min(k, l-1)$. Therefore, the competitive ratio is bounded by $\min(k+1, l)$, which simplifies asymptotically to $O(\min(k, l))$.
+\end{proof}
 \section{A Randomized Algorithm for the Weighted Case}
 
 In this section, we transition to the weighted version of the randomized dependency paging problem. We first examine a natural fractional relaxation and demonstrate its structural limitations.
