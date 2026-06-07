@@ -1,0 +1,17 @@
+[2] Config.pm:307> INFO - This is Biber 2.19
+[2] Config.pm:310> INFO - Logfile is 'aux/main.blg'
+[486] biber:340> INFO - === Sun Jun  7, 2026, 16:19:21
+[577] Biber.pm:419> INFO - Reading 'aux/main.bcf'
+[971] Biber.pm:979> INFO - Found 10 citekeys in bib section 0
+[1039] Biber.pm:4419> INFO - Processing section 0
+[1097] Biber.pm:4610> INFO - Looking for bibtex file 'references.bib' for section 0
+[1102] bibtex.pm:1713> INFO - LaTeX decoding ...
+[1169] bibtex.pm:1519> INFO - Found BibTeX data source 'references.bib'
+[1707] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[1707] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[1707] Biber.pm:4239> INFO - Sorting list 'nty/global//global/global' of type 'entry' with template 'nty' and locale 'en-US'
+[1708] Biber.pm:4245> INFO - No sort tailoring available for locale 'en-US'
+[1766] bbl.pm:660> INFO - Writing 'aux/main.bbl' with encoding 'UTF-8'
+[1790] bbl.pm:763> INFO - Output to aux/main.bbl
+[1790] Biber.pm:131> WARN - BibTeX subsystem: /tmp/biber_tmp_ZKhU/33e59b5ca9ec342068223d604c3f8d55_2385473.utf8, line 36, warning: 1 characters of junk seen at toplevel
+[1791] Biber.pm:133> INFO - WARNINGS: 1

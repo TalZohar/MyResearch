@@ -1,0 +1,15 @@
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
+\contentsline {section}{\numberline {2}Extensive Review of Related Work and Algorithmic Parallels}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}From Tree Caching to General DAGs and the Bypass Formulation}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Restricted Cache Sets and Non-Linear Paging}{3}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Parallels with Offline Precedence Constraints}{3}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}The Connection to the Allocation Problem}{3}{subsection.2.4}%
+\contentsline {section}{\numberline {3}Goals of the Research}{4}{section.3}%
+\contentsline {section}{\numberline {4}Interest in the Research and Use Cases}{4}{section.4}%
+\contentsline {section}{\numberline {5}Overview of Initial Results Obtained}{5}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Unweighted Deterministic and Randomized Algorithms}{5}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Dependency Paging with Arbitrary Rejections}{5}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}The Weighted Case via Non-Linear Paging}{5}{subsection.5.3}%
+\contentsline {section}{\numberline {6}Algorithmic Techniques: Fractional LP Relaxations}{6}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Fractional Routing and DAG Dual Flow}{6}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Knapsack Cover (KC) Inequalities on Posets}{6}{subsection.6.2}%

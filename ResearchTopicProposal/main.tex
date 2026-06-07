@@ -1,0 +1,162 @@
+\documentclass[a4paper,11pt]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{amsthm, amsmath, amssymb}
+\usepackage[style=numeric, backend=biber]{biblatex}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{silence}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue,
+    pdftitle={Thesis Proposal: Dependency Paging}
+}
+\pdfsuppresswarningpagegroup=1
+\WarningFilter{hyperref}{Token not allowed in a PDF string}
+
+% --- Theorems and Lemmas ---
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{claim}{Claim}
+\newtheorem{observation}{Observation}
+\newtheorem{definition}{Definition}
+
+% --- Bibliography ---
+\addbibresource{references.bib}
+
+% --- Document Info ---
+\title{\textbf{Thesis Research Topic Proposal}\\
+\Large Dependency Paging: Generalizations, Bypassing, and Structural Parallels}
+\author{Tal Zohar}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+The caching problem is a fundamental domain within online algorithms. In standard paging, an algorithm manages a limited cache of size $k$ to serve an online sequence of independent page requests. The objective is to minimize the total cost of cache misses over time. 
+
+The \textit{Dependency Paging} problem introduces a rigorous structural constraint to this paradigm. We are provided with a Directed Acyclic Graph (DAG) $G$, where vertices represent pages and directed edges represent dependencies. A valid cache configuration demands that \textbf{if a page $p$ resides in the cache, all of its required dependencies $G[p]$ must also simultaneously reside in the cache.} Consequently, if an eviction algorithm chooses to remove a dependency, all pages that rely on it must also be recursively evicted. Let $l$ denote the width of this DAG (the maximum length of an antichain).
+
+While classical unweighted paging is thoroughly understood—yielding tight $O(k)$ deterministic and $O(\log k)$ randomized competitive ratios—imposing a dependency topology fundamentally breaks standard analytical frameworks. This thesis aims to fully generalize the dependency paging problem. We seek to translate the problem into the weighted domain, analyze the structural anomalies of bypass formulation (rejection costs), and exploit deep mathematical parallels with offline precedence constraints and metric allocation to construct robust Linear Programming (LP) relaxations.
+
+\section{Extensive Review of Related Work and Algorithmic Parallels}
+
+The existing literature provides critical theoretical foundations, though significant gaps remain regarding arbitrary DAG topologies, non-uniform costs, and strong fractional formulations. A major focus of this research is identifying the limitations of these prior works and systematically translating their frameworks to solve generalized dependency paging.
+
+\subsection{From Tree Caching to General DAGs and the Bypass Formulation}
+The formal study of structurally constrained caching began with Bienkowski et al. \cite{Bienkowskietal2016} as ``Online Tree Caching.'' Their work provided an algorithm achieving a competitive ratio of $O(k \cdot h(T))$, where $h(T)$ is the height of the tree. Furthermore, they introduced a preliminary version of bypassing, where any page could be skipped for a fixed penalty $\alpha$. The primary limitation of this research is its strict reliance on tree topologies. In general DAGs, multiple paths can converge on shared dependencies, triggering cascading requirements that invalidate their analysis.
+
+Dallot et al. \cite{dallot2024dependency} expanded the scope to arbitrary DAGs. For the unweighted, non-bypass setting, they achieved an $O(k)$-competitive deterministic algorithm and an expected $O(\min(\log k, \log l))$-competitive randomized algorithm. However, an anomaly emerged in their treatment of the \textit{dependency bypassing} problem (where fetching can be skipped for a uniform cost of 1). 
+
+Note that the formulation of the bypass problem in this dependency context is slightly unintuitive, as skipping a page inherently implies skipping the prerequisites required to cache it. Their analysis yielded a competitive ratio of $O\left(\sqrt{k \min(\log k, \log l)}\right)$. In standard paging, as demonstrated by Epstein et al. \cite{Epsteinetal2013} in their work on online file caching with rejection penalties, introducing bypassing does not fundamentally alter the asymptotic competitive ratio. One of the central goals of this thesis is to investigate whether this $O(\sqrt{k \log k})$ ratio can be improved, or to find a tight structural lower bound that proves why dependency bypassing is fundamentally harder. Furthermore, we aim to extend these bypass techniques to generalized caching with arbitrary rejection costs.
+
+\subsection{Restricted Cache Sets and Non-Linear Paging}
+Dependency paging can be modeled as a restricted caching problem. Buchbinder et al. \cite{buchbinder2014competitive} developed competitive randomized algorithms for caching when the allowable configurations form a matroid. Unfortunately, the valid cache sets in dependency caching do not form a matroid; they take the shape of an antimatroid or a greedoid. 
+
+More recently, Doron-Arad and Naor \cite{DoronAradetal2024} introduced ``Non-Linear Paging,'' generalizing caching by bounding the cache capacity using a monotone function $f(S) \le k$. Their deterministic competitive ratio depends on the width parameter $l_{NL}$ (the size of the largest minimally infeasible set minus one). 
+To apply this to our needs, we formally define the \textbf{closure} of a set $S$:
+\begin{definition}[Closure]
+Let the closure of a set $S$, denoted $\text{closure}(S)$, be defined as the set $S$ combined with all of its required ancestors (dependencies) in the DAG $G$.
+\end{definition}
+By setting our feasibility function to $f(S) = |\text{closure}(S)|$, we can leverage their deterministic framework. While a standard generic reduction to non-linear paging might result in an $l_{NL}$ as large as $k$, applying our specific topological closure function ensures that $l_{NL} \le \min(\text{width}, k)$. 
+
+However, a massive open question remains for the randomized non-linear problem. \cite{DoronAradetal2024} provides a fractional relaxation solvable in $O(\log \mu)$, but lacks a rounding scheme. While they do offer a randomized algorithm for \textit{submodular} functions $f$, our specific topological dependency restriction is inherently \textit{supermodular}. Consequently, their randomized methodologies cannot be applied to our problem, requiring us to design a novel fractional approach.
+
+\subsection{Parallels with Offline Precedence Constraints}
+The topological constraints of our problem share profound, structural similarities with general offline covering problems subject to precedence constraints. McCormick et al. \cite{mccormick2017primal} established that the best-known competitive ratio for offline precedence covering is the width of the graph ($l$). Strikingly, there is no known lower bound approaching this result. It is highly notable that our \textit{online} deterministic ratio of $O(\min(k, l))$ perfectly matches their \textit{offline} ratio. 
+
+However, Kolliopoulos and Skarlatos \cite{kolliopoulos2023precedence} critically expanded on this by proving that the LP formulation relied upon by McCormick has an integrality gap equal to the width of the graph ($l$). This indicates the LP is fundamentally not strong enough.
+
+Crucially, their integrality gap construction heavily exploits the fact that pages can have both varying sizes and varying costs. This raises a paramount research question for our thesis: \textbf{Does this integrality gap still hold when all pages are of uniform size?} This uniform-size, arbitrary-cost scenario maps exactly to our weighted dependency paging problem. 
+
+Furthermore, we are deeply interested in whether the gap holds in the strictly \textbf{unweighted case} (uniform size and uniform cost). Resolving the LP strength for the unweighted case is highly relevant to us, because an improved, tighter LP formulation could directly lead to an improved competitive ratio for unweighted dependency paging \textit{with bypasses}, answering the anomaly identified in Section 2.1.
+
+\subsection{The Connection to the Allocation Problem}
+Perhaps the most potent parallel exists between dependency paging and the ``Allocation Problem,'' considered a fundamental stepping stone in solving the randomized $k$-server conjecture. 
+
+Bansal et al. \cite{bansal2010towards} formally studied the Allocation-C problem (allocation on $l$ disjoint chains). Dependency paging on $l$ disjoint chains is a direct instance of this problem. Through a standard reduction to the \textbf{fractional weighted paging problem}, their framework instantly yields an $O(\log k)$ randomized algorithm for the unweighted case of dependency paging on disjoint chains. 
+
+However, this reduction fails dramatically if arbitrary weights are introduced. Note that in the weighted case, this problem needs to be solved in a \textbf{star metric}, but this is possible using standard paging techniques. We have observed that if the weights are strictly monotonically \textit{decreasing} along a chain, the reduction still holds, providing a partial solution for a specific weighted topology. Furthermore, if we allow dynamic bypassing, the problem's convexity is completely broken, invalidating the basic Allocation-C assumptions.
+
+Subsequent breakthroughs by Bansal et al. \cite{bansal2015polylogarithmic} considered the allocation problem in star metrics using fractional relaxations without rounding them (due to large integrality gaps), using them strictly as an intermediate step for $k$-server. Finally, Bansal and Coester \cite{bansal2021online} explored an online metric allocation relaxation where \textit{only the topmost page} in a configuration is permitted to be fractional. While we can demonstrate this specific relaxation is too weak for the weighted dependency case, adapting this ``topmost-fractional'' technique for the \textit{standard unweighted dependency problem} on a general DAG represents a highly viable path to optimal randomized rounding.
+
+\section{Goals of the Research}
+The core objective of this thesis is to definitively map the algorithmic boundaries of the Dependency Paging problem. We will answer the following specific questions:
+
+\begin{enumerate}
+    \item \textbf{Generalization to the Weighted Problem:} Can we design a deterministic and randomized algorithm for dependency paging where pages have arbitrary fetching and eviction costs? We aim to translate the problem into the weighted domain via non-linear LP relaxations and explicit star-metric reductions.
+    \item \textbf{The Bypass Formulation Anomaly:} The formulation of bypassing in dependency DAGs is unintuitive, and the current $O(\sqrt{k \log k})$ ratio reflects this complexity. We aim to either improve the competitive ratio of the dependency bypassing problem (or find a tight lower bound) and generalize the result for weighted paging and arbitrary rejection penalties.
+    \item \textbf{Simplification and Tighter Analysis of Unweighted Results:} We will provide a tighter, more elegant analysis for the deterministic case to establish exact bounds ($O(\min(k,l))$). For the randomized case, we will formulate a significantly simpler algorithm and analysis, achieving $O(\min(\log k, \log l))$ through direct symmetric chain evictions rather than complex external LP roundings.
+    \item \textbf{Exploiting the Allocation and Precedence Parallels:} We will explicitly map and translate techniques between dependency paging and the aforementioned related problems. We aim to apply specific Allocation-C relaxations (topmost-fractional) to dependency paging, and utilize dependency DAG constraints to probe whether the offline precedence covering LP integrality gap \cite{kolliopoulos2023precedence} vanishes under uniform sizes.
+\end{enumerate}
+
+\section{Interest in the Research and Use Cases}
+The primary interest in this research stems from the foundational theoretical problems it generalizes, as detailed in the prior literature. Rather than inventing external real-world analogies, the use cases for our frameworks are firmly rooted in classic online optimization domains defined by previous works:
+
+\begin{itemize}
+    \item \textbf{File Caching with Rejection Penalties:} As formalized by Epstein et al. \cite{Epsteinetal2013}, systems often have the discretion to bypass fetching an item entirely for a known penalty (e.g., the cost to recompute the data from source). Integrating this into strict structural dependencies models complex computation-vs-memory tradeoffs.
+    \item \textbf{Metric Allocation and K-Server Foundations:} As explored by Bansal et al. \cite{bansal2010towards, bansal2015polylogarithmic}, the allocation of resources subject to strict topological chains (Allocation-C) serves as a primary abstraction for solving generalized metric space problems.
+    \item \textbf{Precedence-Constrained Scheduling/Covering:} As studied by McCormick et al. \cite{mccormick2017primal}, satisfying precedence demands optimally in an offline setting remains a deeply open problem. Discovering online fractional algorithms that bypass their known integrality gaps directly informs the broader field of scheduling.
+\end{itemize}
+
+\section{Overview of Initial Results Obtained}
+In the preliminary phase of this research, several strong results and alternative proofs have already been established. \textit{(Note: The detailed proofs are abstracted into structural overviews and sketches for the purpose of this proposal).}
+
+\subsection{Unweighted Deterministic and Randomized Algorithms}
+We have developed a streamlined marking framework for the unweighted problem based on Dilworth's theorem, partitioning the DAG into $l$ disjoint strongly-ordered chains. 
+\begin{itemize}
+    \item \textbf{Deterministic ($O(\min(k,l))$):} We show that standard LRU inherently respects topological boundaries. By bounding the number of displaced ``old pages'' by the number of phase misses $m$, we prove that a chain, once fully marked, never evicts a page. This limits misses to $m$ per chain, yielding a tight competitive ratio of $O(\min(k,l))$.
+    \item \textbf{Randomized ($O(\min(\log k, \log l))$):} We simplify the randomized analysis significantly. We introduce a strategy where evictions uniformly target ``blocked chains.'' By tracking conceptual ``coins'' given to chains upon eviction and removed upon refetching, we prove that the expected accumulation of coins on the $j$-th unmarked chain is bounded by $\frac{m}{u-j+1}$. Summing this harmonic series yields the $O(\min(\log k, \log l))$ ratio directly.
+\end{itemize}
+
+\subsection{Dependency Paging with Arbitrary Rejections}
+We generalized the dependency paging bypass problem from uniform penalties to arbitrary rejection penalties ($b \in \mathbb{R}^+$) for every distinct request. 
+
+In a standard bypass model, an algorithm can choose to skip fetching $q$. However, if a later request $p$ depends on $q$, the algorithm is forced to perform a ``bulk fetch'' of the broken dependency chain, triggering a massive spike in simultaneous evictions and destroying the amortized cost invariant of marking algorithms.
+
+To resolve this, we utilize a \textbf{Fractional Budget-Pouring} algorithm. When a request with bypass cost $b$ arrives, we scale it by a parameter $\beta$. We treat this cost as a continuous liquid budget, strictly pouring it into the highest-order missing dependency. The request is only served if all fractional counters of missing dependencies successfully reach $1$. This effectively builds a ``virtual sequence'' of non-bypass requests, artificially restoring the topological invariant. By balancing the fetch cost against the true fractional bypass volume, we recover the competitive ratio of $O\left(\sqrt{k \min(\log k, \log l)}\right)$ for arbitrary costs, extending \cite{dallot2024dependency} to the generalized rejection framework.
+
+\subsection{The Weighted Case via Non-Linear Paging}
+For the deterministic weighted case, we successfully reduced our problem to the Non-Linear Paging framework \cite{DoronAradetal2024}. By leveraging our formal definition of the topological closure, we define the cache feasibility function $f(S) = |\text{closure}(S)|$.
+
+\begin{lemma}[Size of Minimally Infeasible Sets]
+Under the closure function $f(S) = |\text{closure}(S)|$, the maximum cardinality of a minimally infeasible set $S \in \mathcal{M}$ is strictly bounded by $\min(k+1, l)$.
+\end{lemma}
+\textit{Proof Sketch:} By definition, if $S \in \mathcal{M}$, it must be an antichain. If $x \in S$ depended on $y \in S$, $x$ is already subsumed by the closure of $y$. Removing $x$ would not change $f(S)$, violating the definition of minimality. Since $S$ is strictly an antichain, $|S| \le l$.
+
+Because the width parameter $l_{NL}$ is bounded by $\min(k, l-1)$, applying the deterministic primal-dual algorithm from \cite{DoronAradetal2024} over our closure function immediately yields a deterministic competitive ratio of $O(\min(k, l))$ for arbitrary weighted pages. We have also successfully extended this to incorporate rejection variables into the LP, relying on mathematical closure to trigger "lazy evictions" that organically uphold dependency constraints.
+
+\section{Algorithmic Techniques: Fractional LP Relaxations}
+
+To attack the open problem of a Randomized Weighted Dependency algorithm, standard fractional relaxations fail. We outline the core techniques to bypass these failures.
+
+\subsection{Fractional Routing and DAG Dual Flow}
+We bypass the impossibility of a standard fractional relaxation (which we prove has a lower bound of $\Omega(l)$ due to hiding fractional mass). 
+We construct a direct fractional LP where we introduce internal dual flow variables $\gamma_{p,q,t}$ that route dual weight strictly along the edges of the DAG. We group pages into dynamically merging \textbf{components}. As the dual density of a dependency approaches its dependent, they merge into a locked component, and $\gamma$ shifts excess dual weight from cheaper dependencies to expensive dependents. This continuous exponential update rule guarantees explicit dual feasibility and establishes a fractional primal cost bounded by $3 \ln(k+1) \cdot \text{OPT}$, yielding an $O(\log k)$ fractional competitive ratio.
+
+\subsection{Knapsack Cover (KC) Inequalities on Posets}
+To circumvent the massive $\Omega(k)$ integrality gaps found in standard global capacity constraints (caused by "cost smearing"), we model the problem using modified Knapsack Cover inequalities adapted for posets. For every antichain $A$ whose weight exceeds $K$, we demand sufficient fractional evictions to clear the surplus weight $W_A - K$. 
+
+\begin{theorem}[Implicit Dependency Enforcement]
+The fractional LP defined by poset-adapted KC inequalities organically enforces $x_v \ge x_u$ for ancestors and descendants, rendering explicit constraints mathematically redundant.
+\end{theorem}
+Because covering an ancestor's antichain is algebraically less efficient than covering a descendant's, the LP is mathematically forced into monotonicity. This provides the structural foundation required for future randomized rounding schemes for the weighted dependency problem.
+
+\newpage
+\printbibliography
+
+\end{document}

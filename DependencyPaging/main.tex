@@ -20,7 +20,7 @@
     linkcolor=blue,        % Color of internal links (equations, figures, sections)
     citecolor=blue,        % Color of bibliography citations
     urlcolor=blue,         % Color of external URLs
-    pdftitle={Your Title}, % Optional: Adds metadata to the PDF
+    pdftitle={Dependency Paging}, % Optional: Adds metadata to the PDF
 }
 \pdfsuppresswarningpagegroup=1
 \WarningFilter{hyperref}{Token not allowed in a PDF string}
@@ -659,6 +659,7 @@ c(x,z) \le (l_{NL} + 1) \cdot v(y) \le (l_{NL} + 1) \cdot OPT
 \]
 By Lemma \ref{lemma:minimally_infeasible_bound}, the width $l_{NL}$ of the feasibility function $f(S) = |\text{closure}(S)|$ is strictly bounded by $\min(k, l-1)$. Therefore, the competitive ratio is bounded by $\min(k+1, l)$, which simplifies asymptotically to $O(\min(k, l))$.
 \end{proof}
+
 \section{A Randomized Algorithm for the Weighted Case}
 
 In this section, we transition to the weighted version of the randomized dependency paging problem. We first examine a natural fractional relaxation and demonstrate its structural limitations.
@@ -821,6 +822,64 @@ $$ x_{p_m} + x_L \ge 1 $$
 When the adversary requests $L$, the algorithm is forced to set $x_L = 0$. This subset constraint immediately enforces:
 $$ x_{p_m} \ge 1 $$
 The fractional algorithm is mathematically blocked from smearing its eviction mass into the cheaper lower pages. It is forced to fully evict the expensive topmost page $p_m$, paying the full cost $W$ to refetch it and completely closing the integrality gap.
+
+\section{Fractional Relaxation via Knapsack Cover Inequalities}
+To achieve an optimal fractional approximation for the weighted dependency paging problem, we formulate a relaxation based on Knapsack Cover (KC) inequalities adapted to the poset structure of the dependencies.
+
+Let $v$ be a vertex in the dependency graph, $c_v$ be the intrinsic fetching/eviction cost of that vertex, and $K$ be the cache capacity. We assume dependencies are structured such that to cache a leaf, we must cache its ancestors (dependencies flow up the tree).
+
+\noindent\textbf{Definition (Subtree Weight):} The weight of a vertex, $W_v$, is the sum of the costs in its subtree (the vertex and all its descendants/dependencies):
+$$W_v = \sum_{u \in \text{subtree}(v)} c_u$$
+
+\noindent\textbf{Definition (Antichain Weight):} For any antichain $A$ (a set of mutually incomparable vertices in the dependency poset), the weight of the antichain, $W_A$, is the sum of the subtree weights of its vertices:
+$$W_A = \sum_{v \in A} W_v$$
+
+\noindent\textbf{Definition (Adjusted Weight):} For any vertex $v \in A$, the adjusted weight $\widetilde{W}_v(A)$ is defined to cap the weight contribution at the required capacity to clear:
+$$\widetilde{W}_v(A) = \min(W_v, W_A - K)$$
+
+\noindent\textbf{The Fractional Constraint:} Let $x_v \in [0, 1]$ be the fractional eviction variable for vertex $v$. For every antichain $A$ where $W_A > K$, the fractional solution must clear enough space to satisfy the capacity:
+$$\sum_{v \in A} \widetilde{W}_v(A) \cdot x_v \ge W_A - K$$
+
+\subsection{Redundancy of Explicit Dependency Constraints}
+A standard fractional formulation would require explicit constraints to enforce the tree structure: if ancestor $v$ depends on leaf $u$, then evicting $u$ forces the eviction of $v$ (i.e., $x_v \ge x_u$). However, we can prove that our modified KC inequalities structurally enforce these dependencies naturally, rendering explicit constraints mathematically redundant without loss of generality.
+
+\begin{theorem}[Implicit Dependency Enforcement]
+The fractional LP defined by the modified KC inequalities over all antichains is naturally monotonically constrained such that an optimal solution organically satisfies $x_v \ge x_u$ for any ancestor $v$ and its descendant $u$.
+\end{theorem}
+
+\begin{proof}
+Let $u$ be a descendant and $v$ be its ancestor. Assume the objective is to minimize fractional eviction cost. We prove that for any antichain containing $u$, there is a corresponding antichain containing $v$ that is strictly harder to cover, forcing the LP to assign $x_v \ge x_u$.
+
+\textbf{Step 1: Constructing the Corresponding Antichain.} Let $A_u$ be any antichain containing $u$. Let $D \subseteq A_u$ be the set of all elements in $A_u$ that are descendants of $v$ (this includes $u$). We construct a new set: $A_v = (A_u \setminus D) \cup \{v\}$. Because $A_u$ is an antichain, it cannot contain any ancestors of $v$. Therefore, swapping the descendants for the ancestor creates a valid antichain $A_v$.
+
+\textbf{Step 2: The RHS Inequality.} By definition, the weight of an ancestor includes the weight of its subtree. Therefore, $W_v \ge \sum_{d \in D} W_d$. Calculating the total weight of the antichains:
+$$W_{A_v} = W_{A_u} - \sum_{d \in D} W_d + W_v \implies W_{A_v} \ge W_{A_u}$$
+Let $R_u = W_{A_u} - K$ and $R_v = W_{A_v} - K$ be the space that needs to be cleared (the Right-Hand Side of the KC inequalities). Because the ancestor's antichain is heavier, it requires more space to be cleared: $R_v \ge R_u$.
+
+\textbf{Step 3: The Relative Covering Efficiency.} We write the KC inequalities for both antichains and normalize them by dividing by their respective RHS.
+
+For $A_u$:
+$$ \sum_{y \notin D} \frac{\min(W_y, R_u)}{R_u} x_y + \dots + \frac{\min(W_u, R_u)}{R_u} x_u \ge 1 $$
+
+For $A_v$:
+$$ \sum_{y \notin D} \frac{\min(W_y, R_v)}{R_v} x_y + \frac{\min(W_v, R_v)}{R_v} x_v \ge 1 $$
+
+Notice the coefficient of $x_v$ in the second equation. Because $W_v \ge W_{A_v} - K$, we know $W_v \ge R_v$. Therefore, $\min(W_v, R_v) = R_v$, and the coefficient of $x_v$ is exactly $1$.
+
+Now look at the external independent variables $x_y$. Their relative covering efficiency is defined by the function $f(R) = \frac{\min(W_y, R)}{R}$.
+\begin{itemize}
+    \item If $R \le W_y$, $f(R) = 1$.
+    \item If $R > W_y$, $f(R) = \frac{W_y}{R}$, which strictly decreases as $R$ increases.
+\end{itemize}
+
+Because $R_v \ge R_u$, the efficiency of any external variable $y$ is monotonically non-increasing: $f(R_v) \le f(R_u)$.
+
+\textbf{Step 4: The Conclusion.} Because external variables $x_y$ are algebraically \textit{less effective} at covering the ancestor's antichain $A_v$ than the descendant's antichain $A_u$, the LP cannot rely on them to clear the required space. The LP must make up the deficit using $x_v$. This structural asymmetry guarantees two things:
+\begin{enumerate}
+    \item \textbf{Natural Monotonicity:} To minimize the overall cost, the LP is algebraically forced to push $x_v$ at least as high as $x_u$, organically satisfying $x_v \ge x_u$.
+    \item \textbf{Protection against Online Requests:} If the environment requests the ancestor ($x_v = 0$), the LP must satisfy the $A_v$ constraint entirely using external variables $x_y$. Because $R_v \ge R_u$, those external variables will be forced so high that they provide a massive \textit{surplus} of cover for the easier $A_u$ constraint, allowing the LP to naturally drop $x_u$ to $0$ without violating the cache capacity limits.
+\end{enumerate}
+\end{proof}
 
 \printbibliography
 

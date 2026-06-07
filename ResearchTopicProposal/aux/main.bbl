@@ -1,0 +1,404 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.2 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global}
+    \entry{bansal2010towards}{inproceedings}{}
+      \name{author}{3}{}{%
+        {{hash=e5933a3896c092918084907295ad0307}{%
+           family={Bansal},
+           familyi={B\bibinitperiod},
+           given={Nikhil},
+           giveni={N\bibinitperiod}}}%
+        {{hash=2278c95310e7172bfd9ff775f317da28}{%
+           family={Buchbinder},
+           familyi={B\bibinitperiod},
+           given={Niv},
+           giveni={N\bibinitperiod}}}%
+        {{hash=8d070a13e474d91cf1ca09ba94681f3a}{%
+           family={Naor},
+           familyi={N\bibinitperiod},
+           given={Joseph},
+           giveni={J\bibinitperiod}}}%
+      }
+      \list{organization}{1}{%
+        {SIAM}%
+      }
+      \strng{namehash}{307e919f65299b8d186cdbcc4be23d7f}
+      \strng{fullhash}{307e919f65299b8d186cdbcc4be23d7f}
+      \strng{bibnamehash}{307e919f65299b8d186cdbcc4be23d7f}
+      \strng{authorbibnamehash}{307e919f65299b8d186cdbcc4be23d7f}
+      \strng{authornamehash}{307e919f65299b8d186cdbcc4be23d7f}
+      \strng{authorfullhash}{307e919f65299b8d186cdbcc4be23d7f}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the Twenty-First Annual ACM-SIAM Symposium on Discrete Algorithms}
+      \field{title}{Towards the randomized k-server conjecture: A primal-dual approach}
+      \field{year}{2010}
+      \field{pages}{40\bibrangedash 55}
+      \range{pages}{16}
+    \endentry
+    \entry{bansal2021online}{article}{}
+      \name{author}{2}{}{%
+        {{hash=e5933a3896c092918084907295ad0307}{%
+           family={Bansal},
+           familyi={B\bibinitperiod},
+           given={Nikhil},
+           giveni={N\bibinitperiod}}}%
+        {{hash=22502f8623d0f00b7eda7d9a9b4891cc}{%
+           family={Coester},
+           familyi={C\bibinitperiod},
+           given={Christian},
+           giveni={C\bibinitperiod}}}%
+      }
+      \strng{namehash}{15ed5cdfa78e809a425ac58eb592e3f9}
+      \strng{fullhash}{15ed5cdfa78e809a425ac58eb592e3f9}
+      \strng{bibnamehash}{15ed5cdfa78e809a425ac58eb592e3f9}
+      \strng{authorbibnamehash}{15ed5cdfa78e809a425ac58eb592e3f9}
+      \strng{authornamehash}{15ed5cdfa78e809a425ac58eb592e3f9}
+      \strng{authorfullhash}{15ed5cdfa78e809a425ac58eb592e3f9}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{arXiv preprint arXiv:2111.15169}
+      \field{title}{Online metric allocation}
+      \field{year}{2021}
+    \endentry
+    \entry{bansal2015polylogarithmic}{article}{}
+      \name{author}{4}{}{%
+        {{hash=e5933a3896c092918084907295ad0307}{%
+           family={Bansal},
+           familyi={B\bibinitperiod},
+           given={Nikhil},
+           giveni={N\bibinitperiod}}}%
+        {{hash=2278c95310e7172bfd9ff775f317da28}{%
+           family={Buchbinder},
+           familyi={B\bibinitperiod},
+           given={Niv},
+           giveni={N\bibinitperiod}}}%
+        {{hash=155359c985c7d112498d27d32ad89bfe}{%
+           family={Madry},
+           familyi={M\bibinitperiod},
+           given={Aleksander},
+           giveni={A\bibinitperiod}}}%
+        {{hash=bd5e1b01b04d3acace0cdf8a2ada8f0e}{%
+           family={Naor},
+           familyi={N\bibinitperiod},
+           given={Joseph\bibnamedelima (Seffi)},
+           giveni={J\bibinitperiod\bibinitdelim (\bibinitperiod}}}%
+      }
+      \strng{namehash}{183c76111e4776819838e73b2a78be6f}
+      \strng{fullhash}{b8b68b4ba878284816f7c36d4e40068e}
+      \strng{bibnamehash}{183c76111e4776819838e73b2a78be6f}
+      \strng{authorbibnamehash}{183c76111e4776819838e73b2a78be6f}
+      \strng{authornamehash}{183c76111e4776819838e73b2a78be6f}
+      \strng{authorfullhash}{b8b68b4ba878284816f7c36d4e40068e}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{J. ACM}
+      \field{number}{5}
+      \field{title}{A Polylogarithmic-Competitive Algorithm for the k-Server Problem}
+      \field{volume}{62}
+      \field{year}{2015}
+    \endentry
+    \entry{Bienkowskietal2016}{article}{}
+      \name{author}{5}{}{%
+        {{hash=5fec956884081aea00e074ade1897b07}{%
+           family={Bienkowski},
+           familyi={B\bibinitperiod},
+           given={Marcin},
+           giveni={M\bibinitperiod}}}%
+        {{hash=32ca1ea84400e45bbd43165cd7ecacc0}{%
+           family={Marcinkowski},
+           familyi={M\bibinitperiod},
+           given={Jan},
+           giveni={J\bibinitperiod}}}%
+        {{hash=d01f7504d3a6f04707be9a945c8de2e2}{%
+           family={Pacut},
+           familyi={P\bibinitperiod},
+           given={Maciej},
+           giveni={M\bibinitperiod}}}%
+        {{hash=58ef30159a40139f51c8605979d5ffb5}{%
+           family={Schmid},
+           familyi={S\bibinitperiod},
+           given={Stefan},
+           giveni={S\bibinitperiod}}}%
+        {{hash=e0368910d3899a80065af347ca746ba5}{%
+           family={Spyra},
+           familyi={S\bibinitperiod},
+           given={Aleksandra},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{9f7093488317819d035be41342a6b163}
+      \strng{fullhash}{83d29967b4db8ecf37f336befde1558a}
+      \strng{bibnamehash}{9f7093488317819d035be41342a6b163}
+      \strng{authorbibnamehash}{9f7093488317819d035be41342a6b163}
+      \strng{authornamehash}{9f7093488317819d035be41342a6b163}
+      \strng{authorfullhash}{83d29967b4db8ecf37f336befde1558a}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{arXiv}
+      \field{title}{Online Tree Caching}
+      \field{year}{2016}
+      \verb{doi}
+      \verb 10.48550/arxiv.1602.08563
+      \endverb
+    \endentry
+    \entry{buchbinder2014competitive}{inproceedings}{}
+      \name{author}{3}{}{%
+        {{hash=2278c95310e7172bfd9ff775f317da28}{%
+           family={Buchbinder},
+           familyi={B\bibinitperiod},
+           given={Niv},
+           giveni={N\bibinitperiod}}}%
+        {{hash=6ac2fd0cef6b4014613e83a2c88d6bb8}{%
+           family={Chen},
+           familyi={C\bibinitperiod},
+           given={Shahar},
+           giveni={S\bibinitperiod}}}%
+        {{hash=8d070a13e474d91cf1ca09ba94681f3a}{%
+           family={Naor},
+           familyi={N\bibinitperiod},
+           given={Joseph},
+           giveni={J\bibinitperiod}}}%
+      }
+      \list{organization}{1}{%
+        {Springer}%
+      }
+      \strng{namehash}{e1981ca271e2d6199d99e227cb652c16}
+      \strng{fullhash}{e1981ca271e2d6199d99e227cb652c16}
+      \strng{bibnamehash}{e1981ca271e2d6199d99e227cb652c16}
+      \strng{authorbibnamehash}{e1981ca271e2d6199d99e227cb652c16}
+      \strng{authornamehash}{e1981ca271e2d6199d99e227cb652c16}
+      \strng{authorfullhash}{e1981ca271e2d6199d99e227cb652c16}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{European Symposium on Algorithms}
+      \field{title}{Competitive algorithms for restricted caching and matroid caching}
+      \field{year}{2014}
+      \field{pages}{209\bibrangedash 221}
+      \range{pages}{13}
+    \endentry
+    \entry{dallot2024dependency}{inproceedings}{}
+      \name{author}{4}{}{%
+        {{hash=14e593116a1dec7aaec8fd738026d29c}{%
+           family={Dallot},
+           familyi={D\bibinitperiod},
+           given={Julien},
+           giveni={J\bibinitperiod}}}%
+        {{hash=7433fc0799b6a32c1af83fce1ac18a31}{%
+           family={Fesharaki},
+           familyi={F\bibinitperiod},
+           given={Amirmehdi\bibnamedelima Jafari},
+           giveni={A\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+        {{hash=d01f7504d3a6f04707be9a945c8de2e2}{%
+           family={Pacut},
+           familyi={P\bibinitperiod},
+           given={Maciej},
+           giveni={M\bibinitperiod}}}%
+        {{hash=58ef30159a40139f51c8605979d5ffb5}{%
+           family={Schmid},
+           familyi={S\bibinitperiod},
+           given={Stefan},
+           giveni={S\bibinitperiod}}}%
+      }
+      \list{organization}{1}{%
+        {IEEE}%
+      }
+      \strng{namehash}{711d54601fcba8fc12db8e923dba0038}
+      \strng{fullhash}{4276cb8caa57a81a7b2385358f0e7f81}
+      \strng{bibnamehash}{711d54601fcba8fc12db8e923dba0038}
+      \strng{authorbibnamehash}{711d54601fcba8fc12db8e923dba0038}
+      \strng{authornamehash}{711d54601fcba8fc12db8e923dba0038}
+      \strng{authorfullhash}{4276cb8caa57a81a7b2385358f0e7f81}
+      \field{sortinit}{D}
+      \field{sortinithash}{6f385f66841fb5e82009dc833c761848}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{IEEE INFOCOM 2024-IEEE Conference on Computer Communications}
+      \field{title}{Dependency-aware online caching}
+      \field{year}{2024}
+      \field{pages}{871\bibrangedash 880}
+      \range{pages}{10}
+    \endentry
+    \entry{DoronAradetal2024}{article}{}
+      \name{author}{3}{}{%
+        {{hash=cf555882acbdd5ee7d79ab9447ab0aca}{%
+           family={Doron-Arad},
+           familyi={D\bibinithyphendelim A\bibinitperiod},
+           given={Ilan},
+           giveni={I\bibinitperiod}}}%
+        {{hash=6a1a376d8169cfc1835f59ac934edbb7}{%
+           family={Joseph},
+           familyi={J\bibinitperiod}}}%
+        {{hash=af696c7816a6ae5e894e25428dc940e2}{%
+           family={Naor},
+           familyi={N\bibinitperiod}}}%
+      }
+      \strng{namehash}{e6c5c261db77f1433d1e3377951caf39}
+      \strng{fullhash}{e6c5c261db77f1433d1e3377951caf39}
+      \strng{bibnamehash}{e6c5c261db77f1433d1e3377951caf39}
+      \strng{authorbibnamehash}{e6c5c261db77f1433d1e3377951caf39}
+      \strng{authornamehash}{e6c5c261db77f1433d1e3377951caf39}
+      \strng{authorfullhash}{e6c5c261db77f1433d1e3377951caf39}
+      \field{sortinit}{D}
+      \field{sortinithash}{6f385f66841fb5e82009dc833c761848}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{arXiv}
+      \field{title}{Non-Linear Paging}
+      \field{year}{2024}
+      \verb{doi}
+      \verb 10.48550/arxiv.2404.13334
+      \endverb
+    \endentry
+    \entry{Epsteinetal2013}{article}{}
+      \name{author}{4}{}{%
+        {{hash=f35330bbd53b6cba9055d8fa6a11dd32}{%
+           family={Epstein},
+           familyi={E\bibinitperiod},
+           given={Leah},
+           giveni={L\bibinitperiod}}}%
+        {{hash=9d81845012f23b01645bfcd58b560c6e}{%
+           family={Imreh},
+           familyi={I\bibinitperiod},
+           given={Csanád},
+           giveni={C\bibinitperiod}}}%
+        {{hash=ffdccadc7c1121a2dcd0d86253694337}{%
+           family={Levin},
+           familyi={L\bibinitperiod},
+           given={Asaf},
+           giveni={A\bibinitperiod}}}%
+        {{hash=0fc9c0479f3323574b9148b9c78ae153}{%
+           family={Nagy-György},
+           familyi={N\bibinithyphendelim G\bibinitperiod},
+           given={Judit},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{cd0460626fd535018f0289481358456b}
+      \strng{fullhash}{0a4459c4aa6d4729608e485275a2f06a}
+      \strng{bibnamehash}{cd0460626fd535018f0289481358456b}
+      \strng{authorbibnamehash}{cd0460626fd535018f0289481358456b}
+      \strng{authornamehash}{cd0460626fd535018f0289481358456b}
+      \strng{authorfullhash}{0a4459c4aa6d4729608e485275a2f06a}
+      \field{sortinit}{E}
+      \field{sortinithash}{8da8a182d344d5b9047633dfc0cc9131}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Algorithmica}
+      \field{title}{Online File Caching with Rejection Penalties}
+      \field{volume}{71}
+      \field{year}{2013}
+      \field{pages}{279\bibrangedash 306}
+      \range{pages}{28}
+      \verb{doi}
+      \verb 10.1007/s00453-013-9793-0
+      \endverb
+    \endentry
+    \entry{kolliopoulos2023precedence}{article}{}
+      \name{author}{2}{}{%
+        {{hash=fbd8c041fad81c616a472ca736037af8}{%
+           family={Kolliopoulos},
+           familyi={K\bibinitperiod},
+           given={Stavros\bibnamedelima G},
+           giveni={S\bibinitperiod\bibinitdelim G\bibinitperiod}}}%
+        {{hash=d3b40c28c8f6595a8abd4678720cd438}{%
+           family={Skarlatos},
+           familyi={S\bibinitperiod},
+           given={Antonis},
+           giveni={A\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Springer}%
+      }
+      \strng{namehash}{661ea7ad27c7eaa6a09c69409c2b88fa}
+      \strng{fullhash}{661ea7ad27c7eaa6a09c69409c2b88fa}
+      \strng{bibnamehash}{661ea7ad27c7eaa6a09c69409c2b88fa}
+      \strng{authorbibnamehash}{661ea7ad27c7eaa6a09c69409c2b88fa}
+      \strng{authornamehash}{661ea7ad27c7eaa6a09c69409c2b88fa}
+      \strng{authorfullhash}{661ea7ad27c7eaa6a09c69409c2b88fa}
+      \field{sortinit}{K}
+      \field{sortinithash}{c02bf6bff1c488450c352b40f5d853ab}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Journal of Combinatorial Optimization}
+      \field{number}{4}
+      \field{title}{Precedence-constrained covering problems with multiplicity constraints}
+      \field{volume}{45}
+      \field{year}{2023}
+      \field{pages}{106}
+      \range{pages}{1}
+    \endentry
+    \entry{mccormick2017primal}{article}{}
+      \name{author}{4}{}{%
+        {{hash=37e7a1c73aaf53cc497643f24ce94ec2}{%
+           family={McCormick},
+           familyi={M\bibinitperiod},
+           given={S\bibnamedelima Thomas},
+           giveni={S\bibinitperiod\bibinitdelim T\bibinitperiod}}}%
+        {{hash=a6657872664d241e2d7a111615f16f52}{%
+           family={Peis},
+           familyi={P\bibinitperiod},
+           given={Britta},
+           giveni={B\bibinitperiod}}}%
+        {{hash=65d480d677b64a7e0d1354d325bf1149}{%
+           family={Verschae},
+           familyi={V\bibinitperiod},
+           given={José},
+           giveni={J\bibinitperiod}}}%
+        {{hash=a58f23f2ab1c3a68cdbd986c2ba18a67}{%
+           family={Wierz},
+           familyi={W\bibinitperiod},
+           given={Andreas},
+           giveni={A\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Springer}%
+      }
+      \strng{namehash}{11d9d017624aea3e57440e1dcad547d8}
+      \strng{fullhash}{e0b2e39a18a48cfdc71754690130114c}
+      \strng{bibnamehash}{11d9d017624aea3e57440e1dcad547d8}
+      \strng{authorbibnamehash}{11d9d017624aea3e57440e1dcad547d8}
+      \strng{authornamehash}{11d9d017624aea3e57440e1dcad547d8}
+      \strng{authorfullhash}{e0b2e39a18a48cfdc71754690130114c}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Algorithmica}
+      \field{number}{3}
+      \field{title}{Primal--dual algorithms for precedence constrained covering problems}
+      \field{volume}{78}
+      \field{year}{2017}
+      \field{pages}{771\bibrangedash 787}
+      \range{pages}{17}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+
